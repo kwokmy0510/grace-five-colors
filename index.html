@@ -255,12 +255,17 @@
 var STORAGE_KEY = 'grace_five_colors_v4_upper';
 
 /* ---------- Drive 同步（Google Apps Script）設定 ----------
-   已預先植入用戶提供嘅 GAS /exec 連結：首次開連結、登入後即指向同一後端自動同步。
-   按用戶指示，同步唔需要密碼，密碼欄可留空。
-   基於安全，唔接受經連結參數傳入嘅網址或密碼；
+   已預先植入用戶提供嘅 GAS /exec 連結：首次開連結、登入後即指向同一後端。
+   同步密碼（後端 Script Properties 嘅 SYNC_TOKEN）唔會寫入網頁原始碼：
+   網頁係公開發佈嘅，寫死密碼等於任何人開源碼就攞到，可以直接讀寫
+   五個人嘅全部資料。每部手機只需喺「個人主頁 → Drive 同步設定」
+   輸入一次密碼，之後只存喺嗰部手機本機，自動同步。
+   後端協定（已實測）：讀取 = GET ?action=get&token=…；
+   儲存 = POST {token, action:'save', state}。
+   基於安全，唔接受經連結參數傳入嘅網址；
    網址亦只接受 script.google.com 嘅 /exec 格式。 */
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbwp1TMpa6KsFQ02607qEo7P0r3j2DEUc1rzuOXiVe1Wdr6OoB-zI4cHR4UYo4zhQ-4wow/exec';
-var GAS_TOKEN = ''; /* 密碼唔洗：留空即可同步 */
+var GAS_TOKEN = ''; /* 密碼唔寫入網頁：每部手機喺設定入一次，只存本機 */
 var GAS_CFG_KEY = 'grace_gas_config_v1';
 function gasUrlValid(url){
   return /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(String(url || ''));
@@ -276,6 +281,10 @@ function gasConfig(){
   if (GAS_TOKEN) token = GAS_TOKEN;
   if (!gasUrlValid(url)) url = '';
   return { url:url, token:token };
+}
+function gasReady(){
+  var c = gasConfig();
+  return !!(c.url && c.token);
 }
 
 /* 全站名字一律大楷 */
@@ -360,7 +369,7 @@ function saveState(){
   scheduleSyncPush();
 }
 
-/* ---------- Drive 同步引擎（全部經 POST，密碼只放請求內容，唔入網址） ---------- */
+/* ---------- Drive 同步引擎（讀取經 GET action=get，儲存經 POST action=save） ---------- */
 var syncBusy = false, syncPushTimer = null;
 function setSyncStatus(mode){
   var pill = document.getElementById('syncPill');
@@ -431,12 +440,15 @@ function gasPost(payload){
   }).then(function(r){ return r.json(); });
 }
 function remoteLoad(){
-  return gasPost({ action:'load' }).then(function(res){
-    return (res && res.ok && res.state && res.state.users) ? res.state : null;
+  /* 後端讀取只支援 GET ?action=get（POST action:'load' 會回 unknown_action） */
+  var cfg = gasConfig();
+  var url = cfg.url + '?action=get&token=' + encodeURIComponent(cfg.token);
+  return fetch(url, { method:'GET' }).then(function(r){ return r.json(); }).then(function(res){
+    return (res && res.ok && res.found && res.state && res.state.users) ? res.state : null;
   });
 }
 function scheduleSyncPush(){
-  if (!gasConfig().url) { setSyncStatus('local'); return; }
+  if (!gasReady()) { setSyncStatus('local'); return; }
   if (syncPushTimer) clearTimeout(syncPushTimer);
   syncPushTimer = setTimeout(function(){ syncPush(); }, 1200);
 }
@@ -449,7 +461,7 @@ function adoptMerged(merged){
 }
 function syncPush(){
   var cfg = gasConfig();
-  if (!cfg.url){ setSyncStatus('local'); return Promise.resolve(false); }
+  if (!gasReady()){ setSyncStatus('local'); return Promise.resolve(false); }
   if (syncBusy) { scheduleSyncPush(); return Promise.resolve(false); }
   syncBusy = true; setSyncStatus('busy');
   /* 先拉雲端並按 id 合併，再成份寫回，避免覆蓋其他人啱啱上載嘅相 */
@@ -479,6 +491,7 @@ function syncPush(){
 function syncPull(manual){
   var cfg = gasConfig();
   if (!cfg.url){ setSyncStatus('local'); if (manual) showToast('尚未設定 Drive 同步連結（個人主頁最底可設定）'); return Promise.resolve(false); }
+  if (!cfg.token){ setSyncStatus('err'); if (manual) showToast('未輸入同步密碼：去個人主頁最底「Drive 同步設定」輸入一次（只存呢部手機）'); return Promise.resolve(false); }
   if (syncBusy) return Promise.resolve(false);
   syncBusy = true; setSyncStatus('busy');
   return remoteLoad().then(function(cloud){
@@ -984,9 +997,9 @@ function renderProfile(){
         }).join(''))
   + '</div>'
   + '<div class="card"><div class="card-title"><span>Drive 同步設定</span><span class="badge-pill" id="gasCfgState">' + (gasConfig().url ? '已連接' : '未設定') + '</span></div>'
-  +   '<p class="hint" style="margin-top:0;">同步連結已預先設定，登入後會自動同步，唔需要再輸入密碼。</p>'
+  +   '<p class="hint" style="margin-top:0;">同步連結已預先設定。密碼只需喺每部手機輸入一次，之後只存喺呢部手機，登入即自動同步；唔輸入密碼就只會用本機儲存，睇唔到其他人嘅相。</p>'
   +   '<div class="field"><label>同步連結（Apps Script /exec 網址）</label><input type="url" id="gasUrl" placeholder="https://script.google.com/macros/s/…/exec" value="' + esc(gasConfig().url) + '" /></div>'
-  +   '<div class="field"><label>同步密碼（唔需要，可留空）</label><input type="password" id="gasToken" placeholder="唔需要密碼，留空即可" value="' + esc(gasConfig().token) + '" /></div>'
+  +   '<div class="field"><label>同步密碼（每部手機只需輸入一次）</label><input type="password" id="gasToken" placeholder="輸入同步密碼" value="' + esc(gasConfig().token) + '" /></div>'
   +   '<button class="btn btn-outline" onclick="saveGasSettings()">儲存並即刻同步</button>'
   + '</div>';
 }
@@ -1049,7 +1062,7 @@ function renderAll(){
 
 /* ---------- 初始化 ---------- */
 renderLogin();
-if (gasConfig().url) setSyncStatus('busy'); else setSyncStatus('local');
+if (gasReady()) setSyncStatus('busy'); else setSyncStatus('local');
 if (state.currentUser && PLAYERS.indexOf(state.currentUser) >= 0){
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('appShell').style.display = '';
