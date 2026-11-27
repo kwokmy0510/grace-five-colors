@@ -1,0 +1,1063 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>恩典五色光</title>
+<style>
+  :root{
+    --bg:#f6f3ec; --card:#ffffff; --text:#22252a; --muted:#6d7280; --border:#e6e1d3;
+    --soft:#f3efe4; --accent:#9a6a12; --accent-soft:#fdf6e0; --good:#059669; --bad:#dc2626;
+    --warn-bg:#fef3c7; --warn-text:#92400e;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#16171b; --card:#22242b; --text:#f2f0ea; --muted:#a6aab4; --border:#353842;
+      --soft:#2a2c34; --accent-soft:#2e2a1c; --warn-bg:#3a2f14; --warn-text:#fbbf24;
+    }
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; padding:0; }
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang HK","PingFang TC","Microsoft JhengHei",sans-serif;
+    background:var(--bg); color:var(--text);
+    display:flex; justify-content:center;
+  }
+  button,[role="button"],select,input{ min-height:2.25rem; }
+  .app-shell{ width:100%; max-width:460px; min-height:100vh; background:var(--bg); display:flex; flex-direction:column; padding-bottom:84px; }
+  @media (min-width:520px){ .app-shell{ box-shadow:0 0 30px rgba(0,0,0,.10); } }
+
+  /* ---------- 登入頁 ---------- */
+  #loginScreen{
+    position:fixed; inset:0; z-index:200; background:var(--bg);
+    display:flex; align-items:flex-start; justify-content:center; overflow-y:auto;
+  }
+  #loginScreen.hidden{ display:none; }
+  .login-inner{ width:100%; max-width:460px; padding:34px 22px 40px; text-align:center; }
+  .five-stripes{ display:flex; gap:5px; justify-content:center; margin-bottom:20px; }
+  .five-stripes span{ width:34px; height:8px; border-radius:99px; display:block; }
+  .login-title{ font-size:32px; font-weight:900; letter-spacing:4px; margin:0 0 6px; }
+  .login-sub{ font-size:13px; color:var(--muted); line-height:1.6; margin:0 0 26px; }
+  .login-q{ font-size:15px; font-weight:800; margin:0 0 12px; }
+  .login-list{ display:flex; flex-direction:column; gap:10px; }
+  .login-btn{
+    display:flex; align-items:center; gap:12px; width:100%;
+    padding:14px 16px; border-radius:14px; border:1.5px solid var(--border);
+    background:var(--card); color:var(--text); cursor:pointer; text-align:left;
+    box-shadow:0 2px 6px rgba(0,0,0,.04);
+  }
+  .login-btn:active{ transform:scale(.99); }
+  .login-avatar{
+    width:44px; height:44px; border-radius:50%; flex:none;
+    display:flex; align-items:center; justify-content:center;
+    font-size:19px; font-weight:900; color:#fff; background:#9ca3af;
+  }
+  .login-name{ font-size:21px; font-weight:900; letter-spacing:3px; }
+  .login-meta{ font-size:11px; color:var(--muted); margin-top:1px; }
+  .login-arrow{ margin-left:auto; font-size:18px; color:var(--muted); }
+  .login-note{ font-size:11px; color:var(--muted); line-height:1.6; margin-top:22px; }
+
+  /* ---------- 頂欄 ---------- */
+  header{
+    position:sticky; top:0; z-index:20; background:var(--card);
+    border-bottom:1px solid var(--border); padding:12px 14px 10px;
+  }
+  .top-bar{ display:flex; align-items:center; justify-content:space-between; gap:6px; }
+  .brand{ display:flex; align-items:center; gap:7px; font-weight:900; font-size:16px; letter-spacing:1px; }
+  .color-dot{ width:12px; height:12px; border-radius:50%; display:inline-block; background:#9ca3af; border:2px solid #fff; box-shadow:0 0 0 1px #d1d5db; flex:none; }
+  .badge-pill{ font-size:11px; padding:3px 9px; border-radius:999px; font-weight:700; background:var(--soft); color:var(--muted); white-space:nowrap; }
+  .top-actions{ display:flex; align-items:center; gap:5px; }
+  .money-pill{ font-size:12px; font-weight:800; padding:5px 10px; border-radius:999px; background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; white-space:nowrap; }
+  @media (prefers-color-scheme: dark){ .money-pill{ background:#123528; border-color:#1d5c43; color:#34d399; } }
+  .mini-btn{ font-size:11px; font-weight:700; padding:5px 9px; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--text); cursor:pointer; min-height:2rem; }
+  .mini-btn.danger{ color:var(--bad); }
+  .sync-pill{ font-size:11px; font-weight:700; padding:5px 9px; border-radius:999px; border:1px solid var(--border); background:var(--soft); color:var(--muted); cursor:pointer; white-space:nowrap; min-height:2rem; }
+  .sync-pill.ok{ color:var(--good); }
+  .sync-pill.busy{ color:var(--warn-text); }
+  .sync-pill.err{ color:var(--bad); }
+  .who-row{ display:flex; align-items:center; gap:8px; margin-top:9px; font-size:12px; color:var(--muted); }
+  .who-name{ font-size:15px; font-weight:900; letter-spacing:2px; color:var(--text); }
+
+  main{ padding:12px 14px; display:flex; flex-direction:column; gap:12px; }
+  .card{ background:var(--card); border:1px solid var(--border); border-radius:16px; padding:14px; box-shadow:0 2px 6px rgba(0,0,0,.03); }
+  .card-title{ font-size:14px; font-weight:800; margin:0 0 8px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .hint{ font-size:11px; color:var(--muted); margin-top:7px; line-height:1.5; }
+  .btn{ width:100%; border:none; border-radius:12px; padding:12px 14px; font-size:13px; font-weight:800; cursor:pointer; background:var(--accent); color:#fff; min-height:2.75rem; }
+  .btn:disabled{ opacity:.45; cursor:not-allowed; }
+  .btn-outline{ background:var(--card); color:var(--text); border:1.5px solid var(--border); }
+  .btn-good{ background:var(--good); }
+  .field{ margin-bottom:10px; }
+  .field label{ display:block; font-size:12px; font-weight:700; margin-bottom:4px; }
+  .field input,.field select{ width:100%; padding:9px 11px; border:1.5px solid var(--border); border-radius:10px; font-size:13px; background:var(--card); color:var(--text); }
+  .empty-state{ text-align:center; padding:30px 18px; color:var(--muted); }
+  .empty-state h3{ margin:0 0 6px; font-size:15px; color:var(--text); }
+  .empty-state p{ margin:0 0 14px; font-size:12px; line-height:1.5; }
+
+  /* ---------- 任務中心 ---------- */
+  .today-strip{ display:flex; gap:8px; }
+  .today-box{ flex:1; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:9px 6px; text-align:center; }
+  .today-box .t-label{ font-size:11px; color:var(--muted); font-weight:700; }
+  .today-box .t-value{ font-size:14px; font-weight:900; margin-top:2px; }
+  .task-num{
+    width:26px; height:26px; border-radius:50%; flex:none; color:#fff; font-size:13px; font-weight:900;
+    display:inline-flex; align-items:center; justify-content:center;
+  }
+  .progress-bg{ height:10px; background:var(--soft); border:1px solid var(--border); border-radius:999px; overflow:hidden; margin:8px 0 4px; }
+  .progress-fill{ height:100%; border-radius:999px; transition:width .3s; }
+  .photo-slots{ display:grid; grid-template-columns:repeat(9,1fr); gap:4px; margin:8px 0 2px; }
+  .photo-slots span{ aspect-ratio:1; border-radius:6px; background:var(--soft); border:1px solid var(--border); display:block; }
+  .photo-slots span.filled{ background:var(--accent); border-color:var(--accent); }
+
+  /* ---------- 動態牆（IG 版面） ---------- */
+  .wall-people{ display:flex; gap:7px; overflow-x:auto; padding:4px 2px 8px; }
+  .wall-person{ display:flex; flex-direction:column; align-items:center; gap:5px; background:none; border:none; cursor:pointer; padding:2px; min-width:58px; }
+  .wall-avatar{
+    width:50px; height:50px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:20px; font-weight:900; color:#fff; background:#9ca3af;
+    border:3px solid var(--card); box-shadow:0 0 0 2px var(--border);
+  }
+  .wall-person.active .wall-avatar{ box-shadow:0 0 0 3px var(--accent); }
+  .wall-person .wp-name{ font-size:11px; font-weight:800; letter-spacing:1px; color:var(--text); }
+  .wall-head{ display:flex; gap:16px; align-items:center; }
+  .wall-head .big-avatar{ width:76px; height:76px; border-radius:50%; font-size:30px; }
+  .wall-stats{ flex:1; display:grid; grid-template-columns:repeat(3,1fr); text-align:center; }
+  .wall-stats .ws-num{ font-size:16px; font-weight:900; }
+  .wall-stats .ws-label{ font-size:11px; color:var(--muted); }
+  .ig-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:2px; }
+  .ig-cell{ position:relative; aspect-ratio:1; overflow:hidden; cursor:pointer; background:var(--soft); border:none; padding:0; display:block; width:100%; }
+  .ig-cell img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .ig-cell .ig-ph{ width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; font-size:11px; padding:8px; text-align:center; line-height:1.4; }
+  .ig-cell .ig-badge{ position:absolute; left:5px; bottom:5px; font-size:9px; font-weight:800; background:rgba(0,0,0,.55); color:#fff; padding:2px 6px; border-radius:99px; }
+
+  /* ---------- 大圖 ---------- */
+  .photo-view{ position:fixed; inset:0; z-index:90; background:rgba(12,12,14,.96); display:none; overflow-y:auto; }
+  .photo-view.open{ display:block; }
+  .photo-view-inner{ max-width:460px; margin:0 auto; padding:14px 14px 34px; color:#f3f4f6; }
+  .pv-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .pv-close{ background:#26262b; color:#fff; border:1px solid #3f3f46; border-radius:10px; padding:8px 14px; font-weight:800; cursor:pointer; font-size:13px; }
+  .pv-img{ width:100%; border-radius:12px; display:block; background:#26262b; }
+  .pv-ph{ border-radius:12px; padding:52px 18px; text-align:center; color:#fff; font-weight:900; font-size:16px; line-height:1.5; }
+  .pv-box{ background:#1d1d21; border:1px solid #34343a; border-radius:14px; padding:13px; margin-top:12px; font-size:13px; line-height:1.6; }
+  .pv-box input,.pv-box select{ width:100%; padding:9px 11px; border-radius:9px; border:1px solid #3f3f46; background:#26262b; color:#fff; font-size:13px; margin-bottom:8px; }
+  .pv-box .btn{ margin-top:2px; }
+
+  /* ---------- 其他 ---------- */
+  .quota-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+  .quota-box{ background:var(--soft); border:1px solid var(--border); border-radius:10px; padding:6px 4px; text-align:center; }
+  .quota-name{ font-size:11px; font-weight:700; }
+  .quota-num{ font-size:12px; font-weight:800; margin-top:2px; }
+  .pool-row{ margin-bottom:10px; }
+  .pool-label{ display:flex; justify-content:space-between; font-size:12px; font-weight:700; margin-bottom:4px; gap:8px; }
+  .bar-bg{ height:8px; background:var(--soft); border:1px solid var(--border); border-radius:999px; overflow:hidden; }
+  .bar-fill{ height:100%; border-radius:999px; transition:width .3s; }
+  .rank-row{ display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--soft); font-size:13px; gap:8px; }
+  .rank-row:last-child{ border-bottom:none; }
+  .judge-item{ border:1px solid var(--border); border-radius:10px; padding:9px; margin-top:8px; background:var(--soft); font-size:12px; line-height:1.6; }
+  .judge-item button{ border:none; border-radius:7px; padding:5px 10px; font-size:11px; font-weight:800; cursor:pointer; color:#fff; min-height:2rem; }
+
+  nav.bottom-nav{
+    position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+    width:100%; max-width:460px; background:var(--card); border-top:1px solid var(--border);
+    display:grid; grid-template-columns:repeat(4,1fr); padding:6px 6px calc(8px + env(safe-area-inset-bottom)); z-index:25;
+  }
+  .nav-btn{ border:none; background:transparent; display:flex; flex-direction:column; align-items:center; gap:3px; font-size:11px; font-weight:700; color:var(--muted); padding:7px 4px; border-radius:12px; cursor:pointer; min-height:3rem; }
+  .nav-btn .nav-ico{ font-size:17px; line-height:1; }
+  .nav-btn.active{ background:var(--text); color:var(--bg); }
+
+  .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; padding:18px; z-index:120; }
+  .modal-backdrop.open{ display:flex; }
+  .modal-box{ width:100%; max-width:380px; background:var(--card); color:var(--text); border-radius:20px; padding:20px 18px; text-align:center; box-shadow:0 15px 35px rgba(0,0,0,.25); max-height:88vh; overflow-y:auto; }
+  .verse-card{ border:3px solid var(--accent); border-radius:16px; padding:16px 14px; background:var(--card); margin:12px 0; }
+  .verse-tag{ display:inline-block; font-size:11px; font-weight:800; padding:3px 10px; border-radius:999px; background:var(--accent-soft); color:var(--accent); margin-bottom:8px; }
+  .verse-text{ font-size:15px; font-weight:800; line-height:1.6; margin:6px 0; }
+  .verse-ref{ font-size:12px; font-weight:700; color:var(--muted); }
+  .verse-note{ font-size:12px; color:var(--muted); margin-top:8px; line-height:1.45; }
+
+  #toast{
+    position:fixed; left:50%; bottom:96px; transform:translateX(-50%) translateY(20px);
+    background:#22252a; color:#fff; font-size:13px; font-weight:700; padding:11px 18px; border-radius:12px;
+    opacity:0; pointer-events:none; transition:all .25s; z-index:300; max-width:88vw; text-align:center; line-height:1.5;
+    box-shadow:0 8px 24px rgba(0,0,0,.3);
+  }
+  #toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- 登入頁 -->
+<div id="loginScreen">
+  <div class="login-inner">
+    <div class="five-stripes">
+      <span style="background:#ef4444"></span><span style="background:#eab308"></span><span style="background:#f97316"></span><span style="background:#10b981"></span><span style="background:#3b82f6"></span>
+    </div>
+    <h1 class="login-title">恩典五色光</h1>
+    <p class="login-sub">五人專屬信仰生活尋寶平台<br>影相尋寶・同心競猜・與主同行</p>
+    <p class="login-q">你係邊一位？揀選你嘅名字登入</p>
+    <div class="login-list" id="loginList"></div>
+  </div>
+</div>
+
+<div class="app-shell" id="appShell" style="display:none;">
+  <header>
+    <div class="top-bar">
+      <div class="brand">
+        <span class="color-dot" id="headerDot"></span>
+        <span>恩典五色光</span>
+        <span class="badge-pill" id="headerColorBadge">代表色</span>
+      </div>
+      <div class="top-actions">
+        <button class="sync-pill" id="syncPill" onclick="syncNow(true)" title="Drive 同步狀態，㩒一下即刻同步">● 本機</button>
+        <span class="money-pill" id="headerMoney">HK$0</span>
+        <button class="mini-btn" onclick="logout()">登出</button>
+      </div>
+    </div>
+    <div class="who-row">
+      <span>現正使用：</span><span class="who-name" id="headerWho">—</span>
+      <span id="headerToday"></span>
+    </div>
+  </header>
+
+  <main id="mainContent"></main>
+
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-tab="tasks" onclick="switchTab('tasks')"><span class="nav-ico">◎</span><span>任務中心</span></button>
+    <button class="nav-btn" data-tab="wall" onclick="switchTab('wall')"><span class="nav-ico">▦</span><span>動態牆</span></button>
+    <button class="nav-btn" data-tab="profile" onclick="switchTab('profile')"><span class="nav-ico">✝</span><span>個人主頁</span></button>
+    <button class="nav-btn" data-tab="board" onclick="switchTab('board')"><span class="nav-ico">♛</span><span>排行榜</span></button>
+  </nav>
+</div>
+
+<!-- 大圖檢視 -->
+<div class="photo-view" id="photoView">
+  <div class="photo-view-inner" id="photoViewInner"></div>
+</div>
+
+<!-- 每日恩典金句卡 -->
+<div class="modal-backdrop" id="verseModal">
+  <div class="modal-box">
+    <div style="font-size:13px;font-weight:800;color:var(--good);" id="verseRewardTitle">任務完成！</div>
+    <div class="verse-card" id="verseCardBox">
+      <div class="verse-tag" id="verseCategoryTag">創造與美好</div>
+      <div class="verse-text" id="verseText"></div>
+      <div class="verse-ref" id="verseRef"></div>
+      <div class="verse-note" id="verseNote"></div>
+    </div>
+    <button class="btn" onclick="closeModal('verseModal')">阿們・收下祝福</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+var STORAGE_KEY = 'grace_five_colors_v4_upper';
+
+/* ---------- Drive 同步（Google Apps Script）設定 ----------
+   已預先植入用戶提供嘅 GAS /exec 連結：首次開連結、登入後即指向同一後端自動同步。
+   按用戶指示，同步唔需要密碼，密碼欄可留空。
+   基於安全，唔接受經連結參數傳入嘅網址或密碼；
+   網址亦只接受 script.google.com 嘅 /exec 格式。 */
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbwp1TMpa6KsFQ02607qEo7P0r3j2DEUc1rzuOXiVe1Wdr6OoB-zI4cHR4UYo4zhQ-4wow/exec';
+var GAS_TOKEN = ''; /* 密碼唔洗：留空即可同步 */
+var GAS_CFG_KEY = 'grace_gas_config_v1';
+function gasUrlValid(url){
+  return /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(String(url || ''));
+}
+function gasConfig(){
+  var url = '', token = '';
+  try{
+    var saved = localStorage.getItem(GAS_CFG_KEY);
+    if (saved){ var c = JSON.parse(saved); if (c.url) url = c.url; if (c.token) token = c.token; }
+  }catch(e){}
+  /* 內置 /exec 連結優先：即使裝置之前存過舊連結，都會改用今次植入嘅後端 */
+  if (gasUrlValid(GAS_URL)) url = GAS_URL;
+  if (GAS_TOKEN) token = GAS_TOKEN;
+  if (!gasUrlValid(url)) url = '';
+  return { url:url, token:token };
+}
+
+/* 全站名字一律大楷 */
+var PLAYERS = ['YUMI', 'YCY', 'APPLE', 'TY', 'ESTHER'];
+
+/* 每人代表色固定（按名單次序配對原本五色） */
+var FIXED_COLORS = { YUMI:'red', YCY:'yellow', APPLE:'orange', TY:'green', ESTHER:'blue' };
+
+var COLOR_DEFS = {
+  red:    { id:'red',    name:'紅色', meaning:'主愛與熱情', hex:'#ef4444', soft:'#fef2f2' },
+  yellow: { id:'yellow', name:'黃色', meaning:'光明與喜樂', hex:'#eab308', soft:'#fefce8' },
+  orange: { id:'orange', name:'橙色', meaning:'盼望與溫暖', hex:'#f97316', soft:'#fff7ed' },
+  green:  { id:'green',  name:'綠色', meaning:'生命與平安', hex:'#10b981', soft:'#ecfdf5' },
+  blue:   { id:'blue',   name:'藍色', meaning:'信實與寧靜', hex:'#3b82f6', soft:'#eff6ff' }
+};
+
+var TIME_SLOTS = [
+  '凌晨 00:00 - 05:59','早上 06:00 - 08:59','上午 09:00 - 11:59',
+  '下午 12:00 - 15:59','黃昏 16:00 - 19:59','晚上 20:00 - 23:59'
+];
+
+/* 獎金池結構（後台計算用，總額 $1,500） */
+var POOL = {
+  photoTotal: 400, photoDailyCap: 245, photoDailyReward: 7,  photoBonus1: 105, photoBonus2: 50,
+  guessTotal: 600, guessMaxEach: 10,
+  stepTotal: 500,  stepDailyCap: 350,  stepDailyReward: 10, stepBonus1: 100,  stepBonus2: 50,
+  activityDays: 7, dailyPhotoGoal: 9, stepGoal: 8000
+};
+
+var VERSES = {
+  creation: [
+    { ref:'創世記 1:31', text:'「神看著一切所造的都甚好。」', note:'天地萬物與你我都是神眼中的美好心意。' },
+    { ref:'詩篇 139:14', text:'「我要稱謝你，因我受造，奇妙可畏；你的作為奇妙，這是我心深知道的。」', note:'在平凡色彩中看見神奇妙的創造。' },
+    { ref:'傳道書 3:11', text:'「神造萬物，各按其時成為美好。」', note:'願你今天捕捉到的每個瞬間，都有神的美好同在。' },
+    { ref:'詩篇 19:1', text:'「諸天述說神的榮耀；穹蒼傳揚他的手段。」', note:'留心生活裡的小細節，處處都是恩典的記號。' }
+  ],
+  fellowship: [
+    { ref:'箴言 2:6', text:'「因為，耶和華賜人智慧；知識和聰明都由他口而出。」', note:'好眼力！願神在生活大小事上也賜你屬天的洞察力。' },
+    { ref:'傳道書 4:9', text:'「兩個人總比一個人好，因為二人勞碌同得美好的果效。」', note:'感謝在生命中有彼此陪伴、互相了解的好姊妹。' },
+    { ref:'腓立比書 2:2', text:'「你們就要意念相同，愛心相同，有一樣的心思，有一樣的意念，使我的喜樂可以滿足。」', note:'無論估中與否，五個人在主愛裡一起玩就是最開心的事。' },
+    { ref:'箴言 17:17', text:'「朋友乃時常親愛，弟兄為患難而生。」', note:'願你們五位的友誼在主愛中越來越深厚。' }
+  ],
+  walk: [
+    { ref:'詩篇 65:11', text:'「你以恩典為年歲的冠冕；你的路徑都滴下脂油。」', note:'你今天走過的每一步，都有神的恩典相隨。' },
+    { ref:'以賽亞書 40:31', text:'「但那等候耶和華的必從新得力。他們必如鷹展翅上騰；他們奔跑卻不困倦，行走卻不疲乏。」', note:'行路辛苦了，願神賜你滿滿的身心力量。' },
+    { ref:'箴言 16:9', text:'「人心籌算自己的道路；惟耶和華指引他的腳步。」', note:'願主引領你前方的每一步，平安喜樂。' },
+    { ref:'詩篇 119:105', text:'「你的話是我腳前的燈，是我路上的光。」', note:'有主同行，每一步都踏實明亮。' }
+  ]
+};
+
+function createInitialState(){
+  var users = {};
+  PLAYERS.forEach(function(p){
+    users[p] = { color:FIXED_COLORS[p], money:0, photoCount:0, dailyPhotoDates:[], totalSteps:0, dailyStepLogs:[], verses:[] };
+  });
+  return { currentUser:null, activeTab:'tasks', wallOwner:null, users:users, photos:[], guesses:[], updatedAt:0 };
+}
+
+var state = loadState();
+var selectedPhotoId = null;
+
+function loadState(){
+  try{
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if (raw){
+      var s = JSON.parse(raw);
+      if (s && s.users && s.users['YUMI']){
+        PLAYERS.forEach(function(p){ if (s.users[p]) s.users[p].color = FIXED_COLORS[p]; });
+        return s;
+      }
+    }
+  }catch(e){}
+  return createInitialState();
+}
+function persistLocal(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  catch(e){ showToast('儲存空間已滿，建議上傳較細嘅相片。'); }
+}
+function saveState(){
+  state.updatedAt = Date.now();
+  persistLocal();
+  scheduleSyncPush();
+}
+
+/* ---------- Drive 同步引擎（全部經 POST，密碼只放請求內容，唔入網址） ---------- */
+var syncBusy = false, syncPushTimer = null;
+function setSyncStatus(mode){
+  var pill = document.getElementById('syncPill');
+  if (!pill) return;
+  pill.className = 'sync-pill' + (mode === 'ok' ? ' ok' : mode === 'busy' ? ' busy' : mode === 'err' ? ' err' : '');
+  pill.textContent = mode === 'ok' ? '● 已同步' : mode === 'busy' ? '● 同步中' : mode === 'err' ? '● 未連接' : '● 本機';
+}
+function normalizeCloudState(s){
+  PLAYERS.forEach(function(p){ if (s.users[p]) s.users[p].color = FIXED_COLORS[p]; });
+  if (!s.photos) s.photos = [];
+  if (!s.guesses) s.guesses = [];
+  return s;
+}
+/* 按 id 合併兩份狀態，避免兩部機同時上載時互相覆蓋（金額／步數只升唔跌，取較大值） */
+function mergeStates(local, cloud){
+  if (!cloud || !cloud.users) return local;
+  cloud = normalizeCloudState(cloud);
+  var out = JSON.parse(JSON.stringify(local));
+  var photoById = {};
+  out.photos.forEach(function(p){ photoById[p.id] = p; });
+  cloud.photos.forEach(function(cp){
+    var lp = photoById[cp.id];
+    if (!lp){ out.photos.push(cp); photoById[cp.id] = cp; }
+    else {
+      if (cp.driveUrl && !lp.driveUrl){ lp.driveUrl = cp.driveUrl; if (cp.driveId) lp.driveId = cp.driveId; lp.img = ''; }
+      else if (!cp.driveUrl && cp.img && !lp.img && !lp.driveUrl){ lp.img = cp.img; }
+    }
+  });
+  var guessById = {};
+  out.guesses.forEach(function(g){ guessById[g.id] = g; });
+  cloud.guesses.forEach(function(cg){
+    var lg = guessById[cg.id];
+    if (!lg){ out.guesses.push(cg); guessById[cg.id] = cg; }
+    else {
+      if (lg.placeCorrect === null && cg.placeCorrect !== null) lg.placeCorrect = cg.placeCorrect;
+      if (lg.activityCorrect === null && cg.activityCorrect !== null) lg.activityCorrect = cg.activityCorrect;
+    }
+  });
+  PLAYERS.forEach(function(p){
+    var lu = out.users[p], cu = cloud.users[p];
+    if (!lu || !cu) return;
+    lu.money = Math.max(lu.money || 0, cu.money || 0);
+    lu.photoCount = Math.max(lu.photoCount || 0, cu.photoCount || 0);
+    lu.totalSteps = Math.max(lu.totalSteps || 0, cu.totalSteps || 0);
+    (cu.dailyPhotoDates || []).forEach(function(d){ if (lu.dailyPhotoDates.indexOf(d) < 0) lu.dailyPhotoDates.push(d); });
+    var stepDates = {};
+    lu.dailyStepLogs.forEach(function(x){ stepDates[x.date] = x; });
+    (cu.dailyStepLogs || []).forEach(function(x){
+      if (!stepDates[x.date]){ lu.dailyStepLogs.push(x); stepDates[x.date] = x; }
+      else if (x.steps > stepDates[x.date].steps) stepDates[x.date].steps = x.steps;
+    });
+    var verseKeys = {};
+    lu.verses.forEach(function(v){ verseKeys[v.ref + '|' + v.date + '|' + v.text] = true; });
+    (cu.verses || []).forEach(function(v){
+      var k = v.ref + '|' + v.date + '|' + v.text;
+      if (!verseKeys[k]){ lu.verses.push(v); verseKeys[k] = true; }
+    });
+  });
+  out.updatedAt = Math.max(local.updatedAt || 0, cloud.updatedAt || 0);
+  return out;
+}
+function gasPost(payload){
+  var cfg = gasConfig();
+  return fetch(cfg.url, {
+    method:'POST',
+    headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+    body: JSON.stringify(Object.assign({ token:cfg.token }, payload))
+  }).then(function(r){ return r.json(); });
+}
+function remoteLoad(){
+  return gasPost({ action:'load' }).then(function(res){
+    return (res && res.ok && res.state && res.state.users) ? res.state : null;
+  });
+}
+function scheduleSyncPush(){
+  if (!gasConfig().url) { setSyncStatus('local'); return; }
+  if (syncPushTimer) clearTimeout(syncPushTimer);
+  syncPushTimer = setTimeout(function(){ syncPush(); }, 1200);
+}
+function adoptMerged(merged){
+  var me = state.currentUser, tab = state.activeTab, wall = state.wallOwner;
+  state = merged;
+  state.currentUser = me; state.activeTab = tab; state.wallOwner = wall;
+  persistLocal();
+  if (state.currentUser) renderAll();
+}
+function syncPush(){
+  var cfg = gasConfig();
+  if (!cfg.url){ setSyncStatus('local'); return Promise.resolve(false); }
+  if (syncBusy) { scheduleSyncPush(); return Promise.resolve(false); }
+  syncBusy = true; setSyncStatus('busy');
+  /* 先拉雲端並按 id 合併，再成份寫回，避免覆蓋其他人啱啱上載嘅相 */
+  return remoteLoad().catch(function(){ return null; }).then(function(cloud){
+    var merged = mergeStates(state, cloud);
+    var snapshot = JSON.parse(JSON.stringify(merged));
+    snapshot.currentUser = null; /* 登入身份屬每部機自己，唔同步 */
+    return gasPost({ action:'save', state:snapshot }).then(function(res){
+      syncBusy = false;
+      if (res && res.ok){
+        if (res.state && res.state.photos){
+          var byId = {};
+          res.state.photos.forEach(function(p){ byId[p.id] = p; });
+          merged.photos.forEach(function(p){
+            var sp = byId[p.id];
+            if (sp && sp.driveUrl){ p.driveUrl = sp.driveUrl; if (sp.driveId) p.driveId = sp.driveId; p.img = ''; }
+          });
+        }
+        adoptMerged(merged);
+        setSyncStatus('ok');
+        return true;
+      }
+      setSyncStatus('err'); return false;
+    });
+  }).catch(function(){ syncBusy = false; setSyncStatus('err'); return false; });
+}
+function syncPull(manual){
+  var cfg = gasConfig();
+  if (!cfg.url){ setSyncStatus('local'); if (manual) showToast('尚未設定 Drive 同步連結（個人主頁最底可設定）'); return Promise.resolve(false); }
+  if (syncBusy) return Promise.resolve(false);
+  syncBusy = true; setSyncStatus('busy');
+  return remoteLoad().then(function(cloud){
+    syncBusy = false;
+    if (cloud){
+      var merged = mergeStates(state, cloud);
+      var needPush = (merged.updatedAt || 0) > (cloud.updatedAt || 0)
+        || merged.photos.length !== cloud.photos.length
+        || merged.guesses.length !== cloud.guesses.length;
+      adoptMerged(merged);
+      setSyncStatus('ok');
+      if (manual) showToast('已同步最新資料');
+      if (needPush) syncPush();
+      return true;
+    }
+    /* 雲端尚無資料：將本機資料首次上載 */
+    setSyncStatus('ok');
+    return syncPush().then(function(){ return true; });
+  }).catch(function(){ syncBusy = false; setSyncStatus('err'); return false; });
+}
+function syncNow(manual){ return syncPull(manual); }
+var autoSyncStarted = false;
+function startAutoSync(){
+  if (autoSyncStarted) return;
+  autoSyncStarted = true;
+  document.addEventListener('visibilitychange', function(){
+    if (!document.hidden && state.currentUser) syncPull(false);
+  });
+  setInterval(function(){ if (state.currentUser && !document.hidden) syncPull(false); }, 60000);
+}
+function photoSrc(photo){ return photo.driveUrl || photo.img || ''; }
+function todayStr(){
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function esc(s){
+  return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+var toastTimer = null;
+function showToast(msg){
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2600);
+}
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
+/* ---------- 獎金池計算 ---------- */
+function getPoolStats(){
+  var photoPaid = 0, stepPaid = 0;
+  PLAYERS.forEach(function(p){
+    photoPaid += state.users[p].dailyPhotoDates.length * POOL.photoDailyReward;
+    stepPaid += state.users[p].dailyStepLogs.filter(function(x){ return x.steps >= POOL.stepGoal; }).length * POOL.stepDailyReward;
+  });
+  var guessPaid = 0;
+  state.guesses.forEach(function(g){
+    if (g.timeCorrect) guessPaid += 2;
+    if (g.placeCorrect === true) guessPaid += 3;
+    if (g.activityCorrect === true) guessPaid += 5;
+  });
+  return { photoPaid:photoPaid, guessPaid:guessPaid, stepPaid:stepPaid, total:photoPaid+guessPaid+stepPaid };
+}
+function getRemainingQuota(guesser, target){
+  var used = state.guesses.filter(function(g){ return g.guesser === guesser && g.target === target; }).length;
+  return Math.max(0, 3 - used);
+}
+function photosToday(owner){
+  var t = todayStr();
+  return state.photos.filter(function(p){ return p.owner === owner && p.date === t; }).length;
+}
+function totalGuessesReceived(owner){
+  return state.guesses.filter(function(g){ return g.target === owner; }).length;
+}
+
+/* ---------- 登入 ---------- */
+function renderLogin(){
+  var list = document.getElementById('loginList');
+  list.innerHTML = PLAYERS.map(function(p){
+    var u = state.users[p];
+    var c = u.color ? COLOR_DEFS[u.color] : null;
+    var meta = '代表色：' + c.name + '・' + c.meaning + '｜累積 HK$' + u.money;
+    return '<button class="login-btn" onclick="loginAs(\'' + p + '\')">'
+      + '<span class="login-avatar" style="background:' + (c ? c.hex : '#9ca3af') + ';">' + p.charAt(0) + '</span>'
+      + '<span><span class="login-name">' + p + '</span><div class="login-meta">' + esc(meta) + '</div></span>'
+      + '<span class="login-arrow">›</span></button>';
+  }).join('');
+}
+function loginAs(name){
+  state.currentUser = name;
+  state.activeTab = 'tasks';           /* 登入後直入任務中心 */
+  if (!state.wallOwner) state.wallOwner = name;
+  saveState();
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('appShell').style.display = '';
+  renderAll();
+  showToast('歡迎返嚟，' + name + '！');
+  startAutoSync();
+  syncPull(false); /* 開頁自動同步五個人嘅最新相片同紀錄 */
+}
+function logout(){
+  state.currentUser = null;
+  saveState();
+  closePhotoView();
+  document.getElementById('appShell').style.display = 'none';
+  document.getElementById('loginScreen').classList.remove('hidden');
+  renderLogin();
+  window.scrollTo(0,0);
+}
+/* ---------- 金句卡 ---------- */
+function triggerVerse(category, rewardTitle){
+  var list = VERSES[category];
+  var picked = list[Math.floor(Math.random() * list.length)];
+  var catNames = { creation:'創造與美好', fellowship:'智慧、洞察與同心', walk:'恩典腳蹤與力量' };
+  var u = state.users[state.currentUser];
+  u.verses.unshift({ category:catNames[category], ref:picked.ref, text:picked.text, note:picked.note, date:todayStr() });
+  saveState();
+  var cDef = u.color ? COLOR_DEFS[u.color] : null;
+  document.getElementById('verseRewardTitle').textContent = rewardTitle;
+  document.getElementById('verseCategoryTag').textContent = catNames[category];
+  document.getElementById('verseText').textContent = picked.text;
+  document.getElementById('verseRef').textContent = '— ' + picked.ref + '（和合本）';
+  document.getElementById('verseNote').textContent = picked.note;
+  document.getElementById('verseCardBox').style.borderColor = cDef ? cDef.hex : '#9a6a12';
+  document.getElementById('verseModal').classList.add('open');
+}
+
+/* ---------- 任務一：步數 ---------- */
+function handleStepSubmit(e){
+  e.preventDefault();
+  var me = state.currentUser, u = state.users[me];
+  var steps = parseInt(document.getElementById('stepCount').value, 10);
+  if (!steps || steps <= 0){ showToast('請輸入有效嘅行路步數！'); return; }
+  var today = todayStr();
+  if (u.dailyStepLogs.some(function(x){ return x.date === today; })){ showToast('你今日已經打過步數卡啦！'); return; }
+  var pools = getPoolStats();
+  var earned = 0;
+  if (steps >= POOL.stepGoal && pools.stepPaid + POOL.stepDailyReward <= POOL.stepDailyCap){
+    u.money += POOL.stepDailyReward; earned = POOL.stepDailyReward;
+  }
+  u.totalSteps += steps;
+  u.dailyStepLogs.unshift({ date:today, steps:steps });
+  saveState(); renderAll();
+  triggerVerse('walk', earned > 0
+    ? '任務一完成！今日達標 ' + steps.toLocaleString() + ' 步，賺取 +HK$' + earned
+    : '已記錄今日 ' + steps.toLocaleString() + ' 步（達 8,000 步可賺 HK$10）');
+}
+
+/* ---------- 任務二：上載相片（每日最少 9 張） ---------- */
+function handleUploadPhoto(e){
+  e.preventDefault();
+  var me = state.currentUser, u = state.users[me];
+  var place = document.getElementById('photoPlace').value.trim();
+  var timeSlot = document.getElementById('photoTime').value;
+  var activity = document.getElementById('photoActivity').value.trim();
+  var clue = document.getElementById('photoClue').value.trim();
+  var fileInput = document.getElementById('photoFile');
+  if (!place || !activity){ showToast('請填寫保密地點及事情（10 字以內）！'); return; }
+  if (activity.length > 10){ showToast('「事情」必須喺 10 個字以內！'); return; }
+
+  function finalizePhoto(imgDataUrl){
+    var today = todayStr();
+    u.photoCount += 1;
+    state.photos.unshift({
+      id:'p_' + Date.now(), owner:me, color:u.color, img:imgDataUrl || '',
+      clue: clue || (COLOR_DEFS[u.color].name + '主題日常瞬間'),
+      place:place, timeSlot:timeSlot, activity:activity, date:today
+    });
+    var countToday = photosToday(me);
+    var pools = getPoolStats();
+    var earned = 0, completedNow = false;
+    if (countToday >= POOL.dailyPhotoGoal && u.dailyPhotoDates.indexOf(today) < 0
+        && pools.photoPaid + POOL.photoDailyReward <= POOL.photoDailyCap){
+      u.dailyPhotoDates.push(today);
+      u.money += POOL.photoDailyReward;
+      earned = POOL.photoDailyReward; completedNow = true;
+    } else if (countToday >= POOL.dailyPhotoGoal && u.dailyPhotoDates.indexOf(today) < 0){
+      u.dailyPhotoDates.push(today); completedNow = true;
+    }
+    saveState(); renderAll();
+    if (completedNow){
+      triggerVerse('creation', '任務二完成！今日已上載 ' + countToday + ' 張相' + (earned > 0 ? '，賺取 +HK$' + earned : ''));
+    } else {
+      showToast('相片已上載！今日進度 ' + countToday + ' / ' + POOL.dailyPhotoGoal + ' 張');
+    }
+  }
+
+  if (fileInput.files && fileInput.files[0]){
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      var img = new Image();
+      img.onload = function(){
+        var canvas = document.createElement('canvas');
+        var scale = Math.min(1, 720 / img.width);
+        canvas.width = img.width * scale; canvas.height = img.height * scale;
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        finalizePhoto(canvas.toDataURL('image/jpeg', 0.72));
+      };
+      img.onerror = function(){ finalizePhoto(''); };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(fileInput.files[0]);
+  } else {
+    finalizePhoto('');
+  }
+}
+
+/* ---------- 任務三：競猜 ---------- */
+function submitGuess(photoId){
+  var me = state.currentUser;
+  var photo = state.photos.find(function(p){ return p.id === photoId; });
+  if (!photo || photo.owner === me) return;
+  if (state.guesses.some(function(g){ return g.photoId === photoId && g.guesser === me; })){ showToast('你已經競猜過呢張相啦！'); return; }
+  if (getRemainingQuota(me, photo.owner) <= 0){ showToast('你對 ' + photo.owner + ' 嘅 3 次競猜配額已經用完！'); return; }
+  var guessTime = document.getElementById('pv_g_time').value;
+  var guessPlace = document.getElementById('pv_g_place').value.trim();
+  var guessActivity = document.getElementById('pv_g_act').value.trim();
+  if (!guessPlace || !guessActivity){ showToast('請填寫你推測嘅地點同事情！'); return; }
+
+  var timeCorrect = (guessTime === photo.timeSlot);
+  var placeAuto = (guessPlace.replace(/\s+/g,'') === photo.place.replace(/\s+/g,''));
+  var immediate = 0;
+  if (timeCorrect) immediate += 2;
+  if (placeAuto) immediate += 3;
+  state.users[me].money += immediate;
+  state.guesses.unshift({
+    id:'g_' + Date.now(), photoId:photoId, guesser:me, target:photo.owner,
+    guessTime:guessTime, guessPlace:guessPlace, guessActivity:guessActivity,
+    timeCorrect:timeCorrect, placeCorrect: placeAuto ? true : null, activityCorrect:null
+  });
+  saveState(); renderAll(); openPhotoView(photoId);
+  triggerVerse('fellowship', '已鎖定競猜！時段' + (timeCorrect ? '估中 (+HK$2)' : '未中') + (placeAuto ? '、地點估中 (+HK$3)' : '') + '，待 ' + photo.owner + ' 批改其餘部分');
+}
+function judgeGuess(guessId, field, isCorrect){
+  var g = state.guesses.find(function(x){ return x.id === guessId; });
+  if (!g) return;
+  if (field === 'place' && g.placeCorrect === null){ g.placeCorrect = isCorrect; if (isCorrect) state.users[g.guesser].money += 3; }
+  if (field === 'activity' && g.activityCorrect === null){ g.activityCorrect = isCorrect; if (isCorrect) state.users[g.guesser].money += 5; }
+  saveState(); renderAll();
+}
+</script>
+
+<script>
+function switchTab(tab){
+  state.activeTab = tab;
+  saveState(); renderAll();
+  window.scrollTo(0,0);
+}
+function setWallOwner(name){
+  state.wallOwner = name;
+  saveState(); renderAll();
+}
+function userColorHex(name){
+  var c = state.users[name].color;
+  return c ? COLOR_DEFS[c].hex : '#9ca3af';
+}
+
+function renderHeader(){
+  var me = state.currentUser, u = state.users[me];
+  var cDef = u.color ? COLOR_DEFS[u.color] : null;
+  document.documentElement.style.setProperty('--accent', cDef ? cDef.hex : '#9a6a12');
+  document.documentElement.style.setProperty('--accent-soft', cDef ? cDef.soft : '#fdf6e0');
+  document.getElementById('headerDot').style.background = cDef ? cDef.hex : '#9ca3af';
+  var badge = document.getElementById('headerColorBadge');
+  badge.textContent = cDef.name + '・' + cDef.meaning.slice(0,2);
+  document.getElementById('headerMoney').textContent = 'HK$' + u.money;
+  document.getElementById('headerWho').textContent = me;
+  var d = new Date();
+  document.getElementById('headerToday').textContent = '｜' + d.getFullYear() + '年' + (d.getMonth()+1) + '月' + d.getDate() + '日';
+}
+
+/* ================= 任務中心 ================= */
+function renderTasks(){
+  var me = state.currentUser, u = state.users[me];
+  var cDef = u.color ? COLOR_DEFS[u.color] : null;
+  var today = todayStr();
+  var stepDone = u.dailyStepLogs.some(function(x){ return x.date === today; });
+  var todayStepLog = u.dailyStepLogs.find(function(x){ return x.date === today; });
+  var countToday = photosToday(me);
+  var photoDone = countToday >= POOL.dailyPhotoGoal;
+  var totalRemain = PLAYERS.filter(function(p){ return p !== me; })
+    .reduce(function(sum, o){ return sum + getRemainingQuota(me, o); }, 0);
+  var slots = '';
+  for (var i = 0; i < POOL.dailyPhotoGoal; i++){
+    slots += '<span class="' + (i < countToday ? 'filled' : '') + '"></span>';
+  }
+  var pct = Math.min(100, Math.round(countToday / POOL.dailyPhotoGoal * 100));
+
+  return ''
+  + '<div class="card" style="padding-bottom:10px;">'
+  +   '<div class="card-title"><span>今日三大任務</span><span class="badge-pill">' + today + '</span></div>'
+  +   '<p class="hint" style="margin:0 0 10px;">歡迎你，<strong style="letter-spacing:1px;">' + me + '</strong>！</p>'
+  +   '<div class="today-strip">'
+  +     '<div class="today-box"><div class="t-label">任務一・步數</div><div class="t-value">' + (stepDone ? '已完成' : '未完成') + '</div></div>'
+  +     '<div class="today-box"><div class="t-label">任務二・相片</div><div class="t-value">' + countToday + ' / ' + POOL.dailyPhotoGoal + ' 張</div></div>'
+  +     '<div class="today-box"><div class="t-label">任務三・競猜</div><div class="t-value">剩 ' + totalRemain + ' 次</div></div>'
+  +   '</div>'
+  + '</div>'
+
+  /* 任務一：步數 */
+  + '<div class="card">'
+  +   '<div class="card-title"><span style="display:flex;align-items:center;gap:8px;"><span class="task-num" style="background:#10b981;">1</span>任務一：輸入今日步數</span>'
+  +   '<span class="badge-pill" style="background:' + (stepDone ? '#ecfdf5' : 'var(--warn-bg)') + ';color:' + (stepDone ? '#059669' : 'var(--warn-text)') + ';">' + (stepDone ? '今日已打卡' : '達 8,000 步賺 HK$10') + '</span></div>'
+  +   '<p class="hint" style="margin-top:0;">與主同行・恩典腳蹤：輸入你今日完成嘅行路步數。</p>'
+  +   (stepDone
+      ? '<p style="font-size:13px;font-weight:700;margin:6px 0 0;">今日已記錄：' + todayStepLog.steps.toLocaleString() + ' 步' + (todayStepLog.steps >= POOL.stepGoal ? '，已達標 +HK$10' : '（未達 8,000 步）') + '</p>'
+      : '<form onsubmit="handleStepSubmit(event)">'
+        + '<div class="field"><label>今日行路步數</label><input type="number" id="stepCount" min="1" max="100000" required placeholder="例如：8500" /></div>'
+        + '<button type="submit" class="btn btn-good">提交今日步數</button></form>')
+  + '</div>'
+
+  /* 任務二：相片 */
+  + '<div class="card">'
+  +   '<div class="card-title"><span style="display:flex;align-items:center;gap:8px;"><span class="task-num" style="background:#f97316;">2</span>任務二：上載相片</span>'
+  +   '<span class="badge-pill" style="background:' + (photoDone ? '#ecfdf5' : 'var(--warn-bg)') + ';color:' + (photoDone ? '#059669' : 'var(--warn-text)') + ';">' + (photoDone ? '今日 9 張已完成' : '每日最少 9 張') + '</span></div>'
+  +   '<p class="hint" style="margin-top:0;">神造甚好・色彩尋寶：上載配合你代表色 <strong>' + cDef.name + '（' + cDef.meaning + '）</strong> 嘅相片，<strong>每日最少 9 張</strong>。地點、時段、事情只有你自己睇到。</p>'
+  +   '<div class="photo-slots">' + slots + '</div>'
+  +   '<div class="progress-bg"><div class="progress-fill" style="width:' + pct + '%;background:#f97316;"></div></div>'
+  +   '<div class="hint" style="margin-top:0;">今日已上載 ' + countToday + ' 張，尚欠 ' + Math.max(0, POOL.dailyPhotoGoal - countToday) + ' 張。</div>'
+  +   '<form onsubmit="handleUploadPhoto(event)" style="margin-top:10px;">'
+  +     '<div class="field"><label>選擇色彩相片（可即時影相或揀相簿）</label><input type="file" id="photoFile" accept="image/*" /></div>'
+  +     '<div class="field"><label>相片簡短描述／畫面線索（公開顯示）</label><input type="text" id="photoClue" placeholder="例如：街角發現嘅紅色小物" /></div>'
+  +     '<div class="field"><label>保密地點（僅限純地名）</label><input type="text" id="photoPlace" required placeholder="例如：銅鑼灣、學校、屋企" /></div>'
+  +     '<div class="field"><label>保密拍攝時段（六選一）</label><select id="photoTime">' + TIME_SLOTS.map(function(s){ return '<option value="' + s + '">' + s + '</option>'; }).join('') + '</select></div>'
+  +     '<div class="field"><label>保密事情（嚴格限制 10 個字以內）</label><input type="text" id="photoActivity" maxlength="10" required placeholder="例如：買緊早餐、等巴士返學" /></div>'
+  +     '<button type="submit" class="btn" style="background:#f97316;">上載相片（今日第 ' + (countToday + 1) + ' 張）</button>'
+  +   '</form>'
+  + '</div>'
+
+  /* 任務三：競猜 */
+  + '<div class="card">'
+  +   '<div class="card-title"><span style="display:flex;align-items:center;gap:8px;"><span class="task-num" style="background:#3b82f6;">3</span>任務三：競猜別人嘅相片</span>'
+  +   '<span class="badge-pill">最高每張 +HK$10</span></div>'
+  +   '<p class="hint" style="margin-top:0;">同心競猜：去動態牆睇其他姊妹嘅相，估佢哋影相嘅<strong>時段、地點、事情</strong>。你而家仲剩 <strong>' + totalRemain + ' 次</strong>競猜。</p>'
+  +   '<div class="quota-grid" style="margin-bottom:10px;">'
+  +   PLAYERS.filter(function(p){ return p !== me; }).map(function(o){
+        var rem = getRemainingQuota(me, o);
+        return '<div class="quota-box"><div class="quota-name"><span style="color:' + userColorHex(o) + ';">●</span> ' + o + '</div><div class="quota-num" style="color:' + (rem === 0 ? 'var(--bad)' : 'inherit') + ';">' + rem + '/3 張</div></div>';
+      }).join('')
+  +   '</div>'
+  +   '<button class="btn" style="background:#3b82f6;" onclick="goGuess()">去動態牆開始競猜</button>'
+  + '</div>';
+}
+function goGuess(){
+  var me = state.currentUser;
+  var other = PLAYERS.find(function(p){ return p !== me && state.photos.some(function(ph){ return ph.owner === p; }); });
+  state.wallOwner = other || me;
+  state.activeTab = 'wall';
+  saveState(); renderAll(); window.scrollTo(0,0);
+}
+
+/* ================= 動態牆（IG 版面） ================= */
+function renderWall(){
+  var me = state.currentUser;
+  var owner = state.wallOwner && PLAYERS.indexOf(state.wallOwner) >= 0 ? state.wallOwner : me;
+  var u = state.users[owner];
+  var cDef = u.color ? COLOR_DEFS[u.color] : null;
+  var myPhotos = state.photos.filter(function(p){ return p.owner === owner; });
+
+  var peopleRow = PLAYERS.map(function(p){
+    var pu = state.users[p];
+    var pc = pu.color ? COLOR_DEFS[pu.color] : null;
+    return '<button class="wall-person ' + (p === owner ? 'active' : '') + '" onclick="setWallOwner(\'' + p + '\')">'
+      + '<span class="wall-avatar" style="background:' + (pc ? pc.hex : '#9ca3af') + ';">' + p.charAt(0) + '</span>'
+      + '<span class="wp-name">' + p + '</span></button>';
+  }).join('');
+
+  var grid = '';
+  if (myPhotos.length === 0){
+    grid = '<div class="card empty-state" style="margin-top:12px;"><h3>' + owner + ' 尚未上載任何相片</h3>'
+      + '<p>' + (owner === me ? '去任務中心上載你今日第一張相啦（每日最少 9 張）。' : '等 ' + owner + ' 上載相片後，你就可以喺度競猜。') + '</p>'
+      + (owner === me ? '<button class="btn" onclick="switchTab(\'tasks\')">去任務中心上載相片</button>' : '')
+      + '</div>';
+  } else {
+    grid = '<div class="ig-grid" style="margin-top:12px;">' + myPhotos.map(function(photo){
+      var guessed = state.guesses.some(function(g){ return g.photoId === photo.id && g.guesser === me; });
+      var badge = photo.owner === me ? '' : (guessed ? '<span class="ig-badge">已競猜</span>' : '<span class="ig-badge">可競猜</span>');
+      var src = photoSrc(photo);
+      var inner = src
+        ? '<img src="' + esc(src) + '" alt="' + esc(photo.clue) + '" loading="lazy" />'
+        : '<span class="ig-ph" style="background:' + userColorHex(photo.owner) + ';">' + esc(photo.clue) + '</span>';
+      return '<button class="ig-cell" onclick="openPhotoView(\'' + photo.id + '\')" aria-label="查看相片：' + esc(photo.clue) + '">' + inner + badge + '</button>';
+    }).join('') + '</div>';
+  }
+
+  return ''
+  + '<div class="card" style="padding-bottom:6px;">'
+  +   '<div class="wall-people">' + peopleRow + '</div>'
+  +   '<div class="wall-head">'
+  +     '<span class="wall-avatar big-avatar" style="background:' + (cDef ? cDef.hex : '#9ca3af') + ';">' + owner.charAt(0) + '</span>'
+  +     '<div class="wall-stats">'
+  +       '<div><div class="ws-num">' + myPhotos.length + '</div><div class="ws-label">相片</div></div>'
+  +       '<div><div class="ws-num">' + totalGuessesReceived(owner) + '</div><div class="ws-label">被競猜</div></div>'
+  +       '<div><div class="ws-num">HK$' + u.money + '</div><div class="ws-label">累積獎金</div></div>'
+  +     '</div>'
+  +   '</div>'
+  +   '<div style="margin-top:10px;">'
+  +     '<div style="font-size:16px;font-weight:900;letter-spacing:2px;">' + owner + '</div>'
+  +     '<div style="font-size:12px;color:var(--muted);margin-top:2px;">代表色：' + cDef.name + '・' + cDef.meaning + '｜累計步數 ' + u.totalSteps.toLocaleString() + ' 步</div>'
+  +     '<div style="font-size:12px;color:var(--muted);">㩒任何一張小圖，可以睇大圖' + (owner === me ? '同你嘅保密標籤' : '同進行競猜') + '。</div>'
+  +   '</div>'
+  + '</div>'
+  + grid;
+}
+
+/* ================= 大圖檢視 ================= */
+function openPhotoView(photoId){
+  selectedPhotoId = photoId;
+  var me = state.currentUser;
+  var photo = state.photos.find(function(p){ return p.id === photoId; });
+  if (!photo) return;
+  var cDef = COLOR_DEFS[photo.color] || COLOR_DEFS.blue;
+  var isMine = photo.owner === me;
+  var myGuess = state.guesses.find(function(g){ return g.photoId === photo.id && g.guesser === me; });
+  var rem = getRemainingQuota(me, photo.owner);
+
+  var body = '';
+  if (isMine){
+    body = '<div class="pv-box"><strong>你的保密標籤（僅自己可見）</strong><br>時段：' + esc(photo.timeSlot) + '<br>地點：' + esc(photo.place) + '<br>事情：' + esc(photo.activity) + '</div>';
+  } else if (myGuess){
+    var earned = (myGuess.timeCorrect ? 2 : 0) + (myGuess.placeCorrect === true ? 3 : 0) + (myGuess.activityCorrect === true ? 5 : 0);
+    var pending = (myGuess.placeCorrect === null || myGuess.activityCorrect === null);
+    body = '<div class="pv-box"><strong style="color:#34d399;">已鎖定競猜</strong>（' + (pending ? '等待 ' + photo.owner + ' 批改中' : '已結算 +HK$' + earned) + '）<br>'
+      + '時段：' + esc(myGuess.guessTime) + '（' + (myGuess.timeCorrect ? '估中 +$2' : '估錯') + '）<br>'
+      + '地點：' + esc(myGuess.guessPlace) + '（' + (myGuess.placeCorrect === null ? '待批改' : myGuess.placeCorrect ? '估中 +$3' : '估錯') + '）<br>'
+      + '事情：' + esc(myGuess.guessActivity) + '（' + (myGuess.activityCorrect === null ? '待批改' : myGuess.activityCorrect ? '估中 +$5' : '估錯') + '）</div>';
+  } else if (rem <= 0){
+    body = '<div class="pv-box" style="color:#fca5a5;font-weight:700;">你對 ' + photo.owner + ' 嘅 3 次競猜配額已滿。</div>';
+  } else {
+    body = '<div class="pv-box"><div style="font-weight:800;margin-bottom:8px;">推測 ' + photo.owner + ' 呢張相嘅隱藏真相（提交後鎖定，不可更改）：</div>'
+      + '<select id="pv_g_time">' + TIME_SLOTS.map(function(s){ return '<option value="' + s + '">' + s + '</option>'; }).join('') + '</select>'
+      + '<input type="text" id="pv_g_place" placeholder="推測地點（純地名，如：旺角、學校）" />'
+      + '<input type="text" id="pv_g_act" maxlength="10" placeholder="推測事情（10 字以內）" />'
+      + '<button class="btn" onclick="submitGuess(\'' + photo.id + '\')">鎖定並提交競猜（剩 ' + rem + ' 次）</button></div>';
+  }
+
+  document.getElementById('photoViewInner').innerHTML = ''
+    + '<div class="pv-top"><span style="font-weight:900;letter-spacing:2px;"><span style="color:' + cDef.hex + ';">●</span> ' + photo.owner + '・' + cDef.name + '主題</span>'
+    + '<button class="pv-close" onclick="closePhotoView()">✕ 關閉</button></div>'
+    + (photoSrc(photo)
+        ? '<img class="pv-img" src="' + esc(photoSrc(photo)) + '" alt="' + esc(photo.clue) + '" />'
+        : '<div class="pv-ph" style="background:' + cDef.hex + ';">' + esc(photo.clue) + '</div>')
+    + '<div style="font-size:13px;margin-top:10px;">畫面提示：' + esc(photo.clue) + '<span style="color:#9ca3af;">｜' + photo.date + '</span></div>'
+    + body;
+  document.getElementById('photoView').classList.add('open');
+  document.getElementById('photoView').scrollTop = 0;
+}
+function closePhotoView(){
+  selectedPhotoId = null;
+  document.getElementById('photoView').classList.remove('open');
+}
+
+/* ================= 個人主頁 ================= */
+function renderProfile(){
+  var me = state.currentUser, u = state.users[me];
+  var cDef = u.color ? COLOR_DEFS[u.color] : null;
+  var myPhotos = state.photos.filter(function(p){ return p.owner === me; });
+  var incoming = state.guesses.filter(function(g){ return g.target === me; });
+
+  var judgeHtml = incoming.length === 0
+    ? '<p class="hint" style="margin:0;">目前未有姊妹競猜你嘅相片。</p>'
+    : incoming.map(function(g){
+        var p = state.photos.find(function(x){ return x.id === g.photoId; });
+        return '<div class="judge-item"><div><strong style="letter-spacing:1px;">' + g.guesser + '</strong> 競猜你嘅相（真實答案：' + esc(p ? p.place : '') + '｜' + esc(p ? p.activity : '') + '）</div>'
+          + '<div style="margin-top:4px;">時段：' + esc(g.guessTime) + '（' + (g.timeCorrect ? '估中 +$2' : '估錯') + '）<br>'
+          + '估地點：<strong>' + esc(g.guessPlace) + '</strong> → '
+          + (g.placeCorrect === null
+              ? '<button style="background:#10b981;" onclick="judgeGuess(\'' + g.id + '\',\'place\',true)">估中 (+$3)</button> <button style="background:#ef4444;" onclick="judgeGuess(\'' + g.id + '\',\'place\',false)">估錯</button>'
+              : (g.placeCorrect ? '已判估中 (+$3)' : '已判估錯')) + '<br>'
+          + '估事情：<strong>' + esc(g.guessActivity) + '</strong> → '
+          + (g.activityCorrect === null
+              ? '<button style="background:#10b981;" onclick="judgeGuess(\'' + g.id + '\',\'activity\',true)">估中 (+$5)</button> <button style="background:#ef4444;" onclick="judgeGuess(\'' + g.id + '\',\'activity\',false)">估錯</button>'
+              : (g.activityCorrect ? '已判估中 (+$5)' : '已判估錯')) + '</div></div>';
+      }).join('');
+
+  return ''
+  + '<div class="card">'
+  +   '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">'
+  +     '<div><div style="font-size:20px;font-weight:900;letter-spacing:3px;">' + me + '</div>'
+  +     '<div style="font-size:12px;color:var(--muted);margin-top:2px;">代表色：<strong>' + cDef.name + '（' + cDef.meaning + '）</strong></div></div>'
+  +     '<div style="text-align:right;"><div style="font-size:11px;color:var(--muted);">個人累積獎金</div><div style="font-size:22px;font-weight:900;color:var(--good);">HK$' + u.money + '</div></div>'
+  +   '</div>'
+  +   '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;text-align:center;">'
+  +     '<div style="background:var(--soft);padding:8px;border-radius:10px;"><div style="font-size:11px;color:var(--muted);">已影相片</div><div style="font-size:15px;font-weight:800;">' + u.photoCount + ' 張</div></div>'
+  +     '<div style="background:var(--soft);padding:8px;border-radius:10px;"><div style="font-size:11px;color:var(--muted);">累計步數</div><div style="font-size:15px;font-weight:800;">' + u.totalSteps.toLocaleString() + '</div></div>'
+  +     '<div style="background:var(--soft);padding:8px;border-radius:10px;"><div style="font-size:11px;color:var(--muted);">收藏金句</div><div style="font-size:15px;font-weight:800;">' + u.verses.length + ' 句</div></div>'
+  +   '</div>'
+  +   '<button class="btn btn-outline" style="margin-top:12px;" onclick="setWallOwner(\'' + me + '\');switchTab(\'wall\')">睇我嘅動態牆</button>'
+  + '</div>'
+  + '<div class="card"><div class="card-title"><span>知音批改中心（姊妹估你嘅相）</span></div>' + judgeHtml + '</div>'
+  + '<div class="card"><div class="card-title"><span>我的保密相簿（' + myPhotos.length + ' 張）</span></div>'
+  +   (myPhotos.length === 0
+      ? '<p class="hint" style="margin:0;">你尚未上傳任何色彩相片。</p>'
+      : myPhotos.map(function(p){
+          return '<div style="padding:8px 0;border-bottom:1px solid var(--soft);font-size:12px;"><div><strong>' + p.date + '</strong>・' + esc(p.clue) + '</div><div style="color:var(--muted);margin-top:2px;">' + esc(p.timeSlot) + '｜地點：' + esc(p.place) + '｜事情：' + esc(p.activity) + '</div></div>';
+        }).join(''))
+  + '</div>'
+  + '<div class="card"><div class="card-title"><span>我的恩典金句收藏冊（' + u.verses.length + ' 句）</span></div>'
+  +   (u.verses.length === 0
+      ? '<p class="hint" style="margin:0;">完成步數、影相或競猜任務後，恩典金句卡會自動收藏喺呢度！</p>'
+      : u.verses.map(function(v){
+          return '<div style="padding:9px;background:var(--soft);border:1px solid var(--border);border-radius:10px;margin-top:8px;"><div style="font-size:11px;font-weight:800;">' + esc(v.category) + '・' + esc(v.ref) + '（' + v.date + '）</div><div style="font-size:13px;font-weight:700;margin-top:3px;">' + esc(v.text) + '</div></div>';
+        }).join(''))
+  + '</div>'
+  + '<div class="card"><div class="card-title"><span>Drive 同步設定</span><span class="badge-pill" id="gasCfgState">' + (gasConfig().url ? '已連接' : '未設定') + '</span></div>'
+  +   '<p class="hint" style="margin-top:0;">同步連結已預先設定，登入後會自動同步，唔需要再輸入密碼。</p>'
+  +   '<div class="field"><label>同步連結（Apps Script /exec 網址）</label><input type="url" id="gasUrl" placeholder="https://script.google.com/macros/s/…/exec" value="' + esc(gasConfig().url) + '" /></div>'
+  +   '<div class="field"><label>同步密碼（唔需要，可留空）</label><input type="password" id="gasToken" placeholder="唔需要密碼，留空即可" value="' + esc(gasConfig().token) + '" /></div>'
+  +   '<button class="btn btn-outline" onclick="saveGasSettings()">儲存並即刻同步</button>'
+  + '</div>';
+}
+function saveGasSettings(){
+  var url = document.getElementById('gasUrl').value.trim();
+  var token = document.getElementById('gasToken').value.trim();
+  if (url && !gasUrlValid(url)){ showToast('同步連結格式唔啱：必須係 script.google.com 嘅 /exec 網址'); return; }
+  try{ localStorage.setItem(GAS_CFG_KEY, JSON.stringify({ url:url, token:token })); }catch(e){}
+  if (!url){ setSyncStatus('local'); showToast('已清除同步設定，改用本機儲存'); renderAll(); return; }
+  showToast('同步設定已儲存，同步中…');
+  syncPull(true).then(function(){ renderAll(); });
+}
+
+/* ================= 排行榜 ================= */
+function renderBoard(){
+  var pools = getPoolStats();
+  var sortedMoney = PLAYERS.slice().sort(function(a,b){ return state.users[b].money - state.users[a].money; });
+  var sortedPhotos = PLAYERS.slice().sort(function(a,b){ return state.users[b].photoCount - state.users[a].photoCount; });
+  var sortedSteps = PLAYERS.slice().sort(function(a,b){ return state.users[b].totalSteps - state.users[a].totalSteps; });
+
+  function rankRows(list, valFn){
+    return list.map(function(p, i){
+      var pu = state.users[p];
+      var pc = pu.color ? COLOR_DEFS[pu.color] : null;
+      return '<div class="rank-row"><span><strong>#' + (i+1) + '</strong> <span style="color:' + pc.hex + ';">●</span> <span style="letter-spacing:1px;font-weight:700;">' + p + '</span> <span style="font-size:11px;color:var(--muted);">(' + pc.name + ')</span></span><span>' + valFn(p) + '</span></div>';
+    }).join('');
+  }
+
+  return ''
+  + '<div class="card">'
+  +   '<div class="card-title"><span>總獎金池 HK$1,500</span><span style="color:var(--good);">已派 HK$' + pools.total + '</span></div>'
+  +   '<div class="pool-row"><div class="pool-label"><span>相片獎池</span><span>HK$' + pools.photoPaid + ' / $400</span></div><div class="bar-bg"><div class="bar-fill" style="width:' + Math.min(100, pools.photoPaid/400*100) + '%;background:#f97316;"></div></div></div>'
+  +   '<div class="pool-row"><div class="pool-label"><span>競猜獎池</span><span>HK$' + pools.guessPaid + ' / $600</span></div><div class="bar-bg"><div class="bar-fill" style="width:' + Math.min(100, pools.guessPaid/600*100) + '%;background:#3b82f6;"></div></div></div>'
+  +   '<div class="pool-row" style="margin-bottom:0;"><div class="pool-label"><span>步數獎池</span><span>HK$' + pools.stepPaid + ' / $500</span></div><div class="bar-bg"><div class="bar-fill" style="width:' + Math.min(100, pools.stepPaid/500*100) + '%;background:#10b981;"></div></div></div>'
+  + '</div>'
+
+  + '<div class="card"><div class="card-title"><span>恩典總資產排行榜</span></div>'
+  +   rankRows(sortedMoney, function(p){ return '<strong style="color:var(--good);">HK$' + state.users[p].money + '</strong>'; })
+  + '</div>'
+  + '<div class="card"><div class="card-title"><span>榮譽榜</span></div>'
+  +   '<div style="font-size:12px;font-weight:800;margin-bottom:4px;">眼力王相片榜</div>'
+  +   rankRows(sortedPhotos, function(p){ return state.users[p].photoCount + ' 張'; })
+  +   '<div style="font-size:12px;font-weight:800;margin:12px 0 4px;">同行累計步數榜</div>'
+  +   rankRows(sortedSteps, function(p){ return state.users[p].totalSteps.toLocaleString() + ' 步'; })
+  + '</div>';
+}
+
+function renderAll(){
+  if (!state.currentUser) return;
+  renderHeader();
+  document.querySelectorAll('.nav-btn').forEach(function(btn){
+    btn.classList.toggle('active', btn.dataset.tab === state.activeTab);
+  });
+  var main = document.getElementById('mainContent');
+  if (state.activeTab === 'tasks') main.innerHTML = renderTasks();
+  else if (state.activeTab === 'wall') main.innerHTML = renderWall();
+  else if (state.activeTab === 'profile') main.innerHTML = renderProfile();
+  else if (state.activeTab === 'board') main.innerHTML = renderBoard();
+}
+
+/* ---------- 初始化 ---------- */
+renderLogin();
+if (gasConfig().url) setSyncStatus('busy'); else setSyncStatus('local');
+if (state.currentUser && PLAYERS.indexOf(state.currentUser) >= 0){
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('appShell').style.display = '';
+  if (!state.wallOwner) state.wallOwner = state.currentUser;
+  renderAll();
+  startAutoSync();
+  syncPull(false); /* 一開連結就自動同步 */
+}
+</script>
+</body>
+</html>
