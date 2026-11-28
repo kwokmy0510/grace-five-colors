@@ -109,6 +109,7 @@
   .btn:disabled{ opacity:.45; cursor:not-allowed; }
   .btn-outline{ background:var(--card); color:var(--text); border:1.5px solid var(--border); }
   .btn-good{ background:var(--good); }
+  .btn-danger{ background:var(--bad); }
   .field{ margin-bottom:10px; }
   .field label{ display:block; font-size:12px; font-weight:700; margin-bottom:4px; }
   .field input,.field select{ width:100%; padding:9px 11px; border:1.5px solid var(--border); border-radius:10px; font-size:13px; background:var(--card); color:var(--text); }
@@ -308,6 +309,14 @@
 <script>
 var STORAGE_KEY = 'grace_five_colors_v4_upper';
 
+/* ---------- 一次性全平台重設（2026-11-28） ----------
+   唔設任何清除掣：新版第一次載入／同步嗰陣自動歸零一次。
+   做法：清空後嘅狀態帶有 RESET_ID 標記並推上雲端；
+   冇標記嘅狀態一律視為重設前嘅舊資料——本機舊資料首次載入即丟棄，
+   雲端舊資料喺合併時被丟棄，唔會再同步返嚟。
+   本機同雲端都帶標記之後，一切回復正常同步，唔會再自動清空。 */
+var RESET_ID = 'grace_reset_2026-11-28_1';
+
 /* ---------- Drive 同步（Google Apps Script）設定 ----------
    已預先植入用戶提供嘅 GAS /exec 連結：首次開連結、登入後即指向同一後端。
    同步密碼（後端 Script Properties 嘅 SYNC_TOKEN）唔會寫入網頁原始碼：
@@ -418,7 +427,7 @@ function createInitialState(){
   PLAYERS.forEach(function(p){
     users[p] = { color:map[p], money:0, photoCount:0, dailyPhotoDates:[], totalSteps:0, dailyStepLogs:[], verses:[] };
   });
-  return { currentUser:null, activeTab:'tasks', wallOwner:null, colorDate:today, users:users, photos:[], guesses:[], updatedAt:0 };
+  return { currentUser:null, activeTab:'tasks', wallOwner:null, colorDate:today, users:users, photos:[], guesses:[], updatedAt:0, resetId:RESET_ID };
 }
 
 var state = loadState();
@@ -430,6 +439,8 @@ function loadState(){
     if (raw){
       var s = JSON.parse(raw);
       if (s && s.users && s.users['YUMI']){
+        /* 重設前嘅本機舊資料：首次載入新版即歸零，只做一次 */
+        if (s.resetId !== RESET_ID) return createInitialState();
         var today = todayStr();
         if (s.colorDate !== today){
           var map = dailyAssignmentFor(today);
@@ -469,6 +480,14 @@ function normalizeCloudState(s){
 function mergeStates(local, cloud){
   if (!cloud || !cloud.users) return local;
   cloud = normalizeCloudState(cloud);
+  /* 一次性重設標記：得一邊有標記嗰陣，冇標記嗰邊係重設前舊資料，成份丟棄，
+     唔畀舊相／舊獎金／舊步數經合併同步返嚟；兩邊都有標記就正常合併。 */
+  var lReset = (local.resetId === RESET_ID), cReset = (cloud.resetId === RESET_ID);
+  if (cReset && !lReset){
+    local = createInitialState();
+  } else if (lReset && !cReset){
+    cloud = normalizeCloudState(createInitialState());
+  }
   var out = JSON.parse(JSON.stringify(local));
   var photoById = {};
   out.photos.forEach(function(p){ photoById[p.id] = p; });
@@ -519,6 +538,7 @@ function mergeStates(local, cloud){
     out.colorDate = local.colorDate;
   }
   out.updatedAt = Math.max(local.updatedAt || 0, cloud.updatedAt || 0);
+  if (lReset || cReset) out.resetId = RESET_ID;
   return out;
 }
 function gasPost(payload){
@@ -590,7 +610,8 @@ function syncPull(manual){
       var merged = mergeStates(state, cloud);
       var needPush = (merged.updatedAt || 0) > (cloud.updatedAt || 0)
         || merged.photos.length !== cloud.photos.length
-        || merged.guesses.length !== cloud.guesses.length;
+        || merged.guesses.length !== cloud.guesses.length
+        || cloud.resetId !== RESET_ID; /* 雲端未有重設標記：即刻將清空+標記狀態推上去 */
       adoptMerged(merged);
       setSyncStatus('ok');
       if (manual) showToast('已同步最新資料');
