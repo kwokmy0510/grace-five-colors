@@ -107,7 +107,7 @@
   }
   .progress-bg{ height:10px; background:var(--soft); border:1px solid var(--border); border-radius:999px; overflow:hidden; margin:8px 0 4px; }
   .progress-fill{ height:100%; border-radius:999px; transition:width .3s; }
-  .photo-slots{ display:grid; grid-template-columns:repeat(9,1fr); gap:4px; margin:8px 0 2px; }
+  .photo-slots{ display:grid; grid-template-columns:repeat(6,1fr); gap:4px; margin:8px 0 2px; }
   .photo-slots span{ aspect-ratio:1; border-radius:6px; background:var(--soft); border:1px solid var(--border); display:block; }
   .photo-slots span.filled{ background:var(--accent); border-color:var(--accent); }
 
@@ -223,10 +223,10 @@
   <main id="mainContent"></main>
 
   <nav class="bottom-nav">
-    <button class="nav-btn active" data-tab="tasks" onclick="switchTab('tasks')"><span class="nav-ico">◎</span><span>任務中心</span></button>
-    <button class="nav-btn" data-tab="wall" onclick="switchTab('wall')"><span class="nav-ico">▦</span><span>動態牆</span></button>
-    <button class="nav-btn" data-tab="profile" onclick="switchTab('profile')"><span class="nav-ico">✝</span><span>個人主頁</span></button>
-    <button class="nav-btn" data-tab="board" onclick="switchTab('board')"><span class="nav-ico">♛</span><span>排行榜</span></button>
+    <button class="nav-btn" data-tab="wall" onclick="switchTab('wall')"><span class="nav-ico">🔍</span><span>動態牆</span></button>
+    <button class="nav-btn active" data-tab="tasks" onclick="switchTab('tasks')"><span class="nav-ico">📸</span><span>任務中心</span></button>
+    <button class="nav-btn" data-tab="profile" onclick="switchTab('profile')"><span class="nav-ico">✝️</span><span>個人主頁</span></button>
+    <button class="nav-btn" data-tab="board" onclick="switchTab('board')"><span class="nav-ico">🏆</span><span>排行榜</span></button>
   </nav>
 </div>
 
@@ -245,7 +245,7 @@
       <div class="verse-ref" id="verseRef"></div>
       <div class="verse-note" id="verseNote"></div>
     </div>
-    <button class="btn" onclick="closeModal('verseModal')">阿們・收下祝福</button>
+    <button class="btn" onclick="closeVerseModal()">阿們・收下祝福（已存入收藏冊）</button>
   </div>
 </div>
 
@@ -290,8 +290,30 @@ function gasReady(){
 /* 全站名字一律大楷 */
 var PLAYERS = ['YUMI', 'YCY', 'APPLE', 'TY', 'ESTHER'];
 
-/* 每人代表色固定（按名單次序配對原本五色） */
-var FIXED_COLORS = { YUMI:'red', YCY:'yellow', APPLE:'orange', TY:'green', ESTHER:'blue' };
+/* 代表色每日隨機抽取：五色不重複分配畀五個人；
+   以日期做種子，五部手機同一日會計出同一分配，毋須等同步都一致。 */
+var COLOR_IDS = ['red','yellow','orange','green','blue'];
+function dailyAssignmentFor(dateStr){
+  var h = 2166136261;
+  var s = String(dateStr || '');
+  for (var i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  var seed = (h >>> 0) || 1;
+  function rnd(){ seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; }
+  var ids = COLOR_IDS.slice();
+  for (var j = ids.length - 1; j > 0; j--){ var k = Math.floor(rnd() * (j + 1)); var tmp = ids[j]; ids[j] = ids[k]; ids[k] = tmp; }
+  var map = {};
+  PLAYERS.forEach(function(p, idx){ map[p] = ids[idx]; });
+  return map;
+}
+function ensureDailyColors(){
+  if (typeof state === 'undefined' || !state || !state.users) return false;
+  var today = todayStr();
+  if (state.colorDate === today) return false;
+  var map = dailyAssignmentFor(today);
+  PLAYERS.forEach(function(p){ if (state.users[p]) state.users[p].color = map[p]; });
+  state.colorDate = today;
+  return true;
+}
 
 var COLOR_DEFS = {
   red:    { id:'red',    name:'紅色', meaning:'主愛與熱情', hex:'#ef4444', soft:'#fef2f2' },
@@ -311,7 +333,7 @@ var POOL = {
   photoTotal: 400, photoDailyCap: 245, photoDailyReward: 7,  photoBonus1: 105, photoBonus2: 50,
   guessTotal: 600, guessMaxEach: 10,
   stepTotal: 500,  stepDailyCap: 350,  stepDailyReward: 10, stepBonus1: 100,  stepBonus2: 50,
-  activityDays: 7, dailyPhotoGoal: 9, stepGoal: 8000
+  activityDays: 7, dailyPhotoGoal: 6, stepGoal: 8000
 };
 
 var VERSES = {
@@ -336,11 +358,13 @@ var VERSES = {
 };
 
 function createInitialState(){
+  var today = todayStr();
+  var map = dailyAssignmentFor(today);
   var users = {};
   PLAYERS.forEach(function(p){
-    users[p] = { color:FIXED_COLORS[p], money:0, photoCount:0, dailyPhotoDates:[], totalSteps:0, dailyStepLogs:[], verses:[] };
+    users[p] = { color:map[p], money:0, photoCount:0, dailyPhotoDates:[], totalSteps:0, dailyStepLogs:[], verses:[] };
   });
-  return { currentUser:null, activeTab:'tasks', wallOwner:null, users:users, photos:[], guesses:[], updatedAt:0 };
+  return { currentUser:null, activeTab:'tasks', wallOwner:null, colorDate:today, users:users, photos:[], guesses:[], updatedAt:0 };
 }
 
 var state = loadState();
@@ -352,7 +376,12 @@ function loadState(){
     if (raw){
       var s = JSON.parse(raw);
       if (s && s.users && s.users['YUMI']){
-        PLAYERS.forEach(function(p){ if (s.users[p]) s.users[p].color = FIXED_COLORS[p]; });
+        var today = todayStr();
+        if (s.colorDate !== today){
+          var map = dailyAssignmentFor(today);
+          PLAYERS.forEach(function(p){ if (s.users[p]) s.users[p].color = map[p]; });
+          s.colorDate = today;
+        }
         return s;
       }
     }
@@ -378,7 +407,6 @@ function setSyncStatus(mode){
   pill.textContent = mode === 'ok' ? '● 已同步' : mode === 'busy' ? '● 同步中' : mode === 'err' ? '● 未連接' : '● 本機';
 }
 function normalizeCloudState(s){
-  PLAYERS.forEach(function(p){ if (s.users[p]) s.users[p].color = FIXED_COLORS[p]; });
   if (!s.photos) s.photos = [];
   if (!s.guesses) s.guesses = [];
   return s;
@@ -421,13 +449,21 @@ function mergeStates(local, cloud){
       if (!stepDates[x.date]){ lu.dailyStepLogs.push(x); stepDates[x.date] = x; }
       else if (x.steps > stepDates[x.date].steps) stepDates[x.date].steps = x.steps;
     });
+    if (!lu.verses) lu.verses = [];
     var verseKeys = {};
-    lu.verses.forEach(function(v){ verseKeys[v.ref + '|' + v.date + '|' + v.text] = true; });
+    lu.verses.forEach(function(v){ verseKeys[v.id ? ('id:' + v.id) : (v.ref + '|' + v.date + '|' + v.text + '|' + (v.time || ''))] = true; });
     (cu.verses || []).forEach(function(v){
-      var k = v.ref + '|' + v.date + '|' + v.text;
+      var k = v.id ? ('id:' + v.id) : (v.ref + '|' + v.date + '|' + v.text + '|' + (v.time || ''));
       if (!verseKeys[k]){ lu.verses.push(v); verseKeys[k] = true; }
     });
   });
+  /* 每日顏色：以較新日期嗰份分配為準；同一日種子相同，五機自然一致 */
+  if (cloud.colorDate && (!local.colorDate || cloud.colorDate > local.colorDate)){
+    out.colorDate = cloud.colorDate;
+    PLAYERS.forEach(function(p){ if (out.users[p] && cloud.users[p]) out.users[p].color = cloud.users[p].color; });
+  } else if (local.colorDate){
+    out.colorDate = local.colorDate;
+  }
   out.updatedAt = Math.max(local.updatedAt || 0, cloud.updatedAt || 0);
   return out;
 }
@@ -539,6 +575,11 @@ function showToast(msg){
   toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2600);
 }
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+function closeVerseModal(){
+  closeModal('verseModal');
+  if (state.currentUser) renderAll();
+  if (selectedPhotoId) openPhotoView(selectedPhotoId);
+}
 
 /* ---------- 獎金池計算 ---------- */
 function getPoolStats(){
@@ -569,11 +610,12 @@ function totalGuessesReceived(owner){
 
 /* ---------- 登入 ---------- */
 function renderLogin(){
+  if (state && state.users && ensureDailyColors()) persistLocal();
   var list = document.getElementById('loginList');
   list.innerHTML = PLAYERS.map(function(p){
     var u = state.users[p];
     var c = u.color ? COLOR_DEFS[u.color] : null;
-    var meta = '代表色：' + c.name + '・' + c.meaning + '｜累積 HK$' + u.money;
+    var meta = '今日代表色：' + c.name + '・' + c.meaning + '｜累積 HK$' + u.money;
     return '<button class="login-btn" onclick="loginAs(\'' + p + '\')">'
       + '<span class="login-avatar" style="background:' + (c ? c.hex : '#9ca3af') + ';">' + p.charAt(0) + '</span>'
       + '<span><span class="login-name">' + p + '</span><div class="login-meta">' + esc(meta) + '</div></span>'
@@ -607,7 +649,8 @@ function triggerVerse(category, rewardTitle){
   var picked = list[Math.floor(Math.random() * list.length)];
   var catNames = { creation:'創造與美好', fellowship:'智慧、洞察與同心', walk:'恩典腳蹤與力量' };
   var u = state.users[state.currentUser];
-  u.verses.unshift({ category:catNames[category], ref:picked.ref, text:picked.text, note:picked.note, date:todayStr() });
+  if (!u.verses) u.verses = [];
+  u.verses.unshift({ id:'v_' + Date.now() + '_' + Math.floor(Math.random() * 1000000), time:Date.now(), category:catNames[category], ref:picked.ref, text:picked.text, note:picked.note, date:todayStr() });
   saveState();
   var cDef = u.color ? COLOR_DEFS[u.color] : null;
   document.getElementById('verseRewardTitle').textContent = rewardTitle;
@@ -640,7 +683,7 @@ function handleStepSubmit(e){
     : '已記錄今日 ' + steps.toLocaleString() + ' 步（達 8,000 步可賺 HK$10）');
 }
 
-/* ---------- 任務二：上載相片（每日最少 9 張） ---------- */
+/* ---------- 任務二：上載相片（每日最少 6 張） ---------- */
 function handleUploadPhoto(e){
   e.preventDefault();
   var me = state.currentUser, u = state.users[me];
@@ -728,9 +771,13 @@ function submitGuess(photoId){
 function judgeGuess(guessId, field, isCorrect){
   var g = state.guesses.find(function(x){ return x.id === guessId; });
   if (!g) return;
-  if (field === 'place' && g.placeCorrect === null){ g.placeCorrect = isCorrect; if (isCorrect) state.users[g.guesser].money += 3; }
-  if (field === 'activity' && g.activityCorrect === null){ g.activityCorrect = isCorrect; if (isCorrect) state.users[g.guesser].money += 5; }
+  var changed = false;
+  if (field === 'place' && g.placeCorrect === null){ g.placeCorrect = isCorrect; if (isCorrect) state.users[g.guesser].money += 3; changed = true; }
+  if (field === 'activity' && g.activityCorrect === null){ g.activityCorrect = isCorrect; if (isCorrect) state.users[g.guesser].money += 5; changed = true; }
+  if (!changed) return;
   saveState(); renderAll();
+  showToast(isCorrect ? '已批改：回答正確，已為 ' + g.guesser + ' 加分' : '已批改：回答錯誤，唔加分');
+  if (selectedPhotoId) openPhotoView(selectedPhotoId);
 }
 </script>
 
@@ -806,8 +853,8 @@ function renderTasks(){
   /* 任務二：相片 */
   + '<div class="card">'
   +   '<div class="card-title"><span style="display:flex;align-items:center;gap:8px;"><span class="task-num" style="background:#f97316;">2</span>任務二：上載相片</span>'
-  +   '<span class="badge-pill" style="background:' + (photoDone ? '#ecfdf5' : 'var(--warn-bg)') + ';color:' + (photoDone ? '#059669' : 'var(--warn-text)') + ';">' + (photoDone ? '今日 9 張已完成' : '每日最少 9 張') + '</span></div>'
-  +   '<p class="hint" style="margin-top:0;">神造甚好・色彩尋寶：上載配合你代表色 <strong>' + cDef.name + '（' + cDef.meaning + '）</strong> 嘅相片，<strong>每日最少 9 張</strong>。地點、時段、事情只有你自己睇到。</p>'
+  +   '<span class="badge-pill" style="background:' + (photoDone ? '#ecfdf5' : 'var(--warn-bg)') + ';color:' + (photoDone ? '#059669' : 'var(--warn-text)') + ';">' + (photoDone ? '今日 ' + POOL.dailyPhotoGoal + ' 張已完成' : '每日最少 ' + POOL.dailyPhotoGoal + ' 張') + '</span></div>'
+  +   '<p class="hint" style="margin-top:0;">神造甚好・色彩尋寶：上載配合你今日代表色 <strong>' + cDef.name + '（' + cDef.meaning + '）</strong> 嘅相片，<strong>每日最少 6 張</strong>。地點、時段、事情只有你自己睇到。</p>'
   +   '<div class="photo-slots">' + slots + '</div>'
   +   '<div class="progress-bg"><div class="progress-fill" style="width:' + pct + '%;background:#f97316;"></div></div>'
   +   '<div class="hint" style="margin-top:0;">今日已上載 ' + countToday + ' 張，尚欠 ' + Math.max(0, POOL.dailyPhotoGoal - countToday) + ' 張。</div>'
@@ -862,7 +909,7 @@ function renderWall(){
   var grid = '';
   if (myPhotos.length === 0){
     grid = '<div class="card empty-state" style="margin-top:12px;"><h3>' + owner + ' 尚未上載任何相片</h3>'
-      + '<p>' + (owner === me ? '去任務中心上載你今日第一張相啦（每日最少 9 張）。' : '等 ' + owner + ' 上載相片後，你就可以喺度競猜。') + '</p>'
+      + '<p>' + (owner === me ? '去任務中心上載你今日第一張相啦（每日最少 6 張）。' : '等 ' + owner + ' 上載相片後，你就可以喺度競猜。') + '</p>'
       + (owner === me ? '<button class="btn" onclick="switchTab(\'tasks\')">去任務中心上載相片</button>' : '')
       + '</div>';
   } else {
@@ -890,7 +937,7 @@ function renderWall(){
   +   '</div>'
   +   '<div style="margin-top:10px;">'
   +     '<div style="font-size:16px;font-weight:900;letter-spacing:2px;">' + owner + '</div>'
-  +     '<div style="font-size:12px;color:var(--muted);margin-top:2px;">代表色：' + cDef.name + '・' + cDef.meaning + '｜累計步數 ' + u.totalSteps.toLocaleString() + ' 步</div>'
+  +     '<div style="font-size:12px;color:var(--muted);margin-top:2px;">今日代表色：' + cDef.name + '・' + cDef.meaning + '｜累計步數 ' + u.totalSteps.toLocaleString() + ' 步</div>'
   +     '<div style="font-size:12px;color:var(--muted);">㩒任何一張小圖，可以睇大圖' + (owner === me ? '同你嘅保密標籤' : '同進行競猜') + '。</div>'
   +   '</div>'
   + '</div>'
@@ -910,7 +957,25 @@ function openPhotoView(photoId){
 
   var body = '';
   if (isMine){
+    var mineGuesses = state.guesses.filter(function(g){ return g.photoId === photo.id; });
     body = '<div class="pv-box"><strong>你的保密標籤（僅自己可見）</strong><br>時段：' + esc(photo.timeSlot) + '<br>地點：' + esc(photo.place) + '<br>事情：' + esc(photo.activity) + '</div>';
+    if (mineGuesses.length === 0){
+      body += '<div class="pv-box">暫時未有姊妹競猜呢張相，有人競猜後你可以直接喺度批改。</div>';
+    } else {
+      body += mineGuesses.map(function(g){
+        return '<div class="pv-box"><strong>' + esc(g.guesser) + ' 嘅答案（你來批改）</strong><br>'
+          + '時段：' + esc(g.guessTime) + '（' + (g.timeCorrect ? '估中 +$2' : '估錯') + '）<br>'
+          + '地點答案：<strong>' + esc(g.guessPlace) + '</strong>（正確答案：' + esc(photo.place) + '）<br>'
+          + (g.placeCorrect === null
+              ? '<button class="btn btn-good" style="margin:4px 0;" onclick="judgeGuess(\'' + g.id + '\',\'place\',true)">地點：回答正確 (+$3)</button><button class="btn" style="background:#ef4444;margin:4px 0;" onclick="judgeGuess(\'' + g.id + '\',\'place\',false)">地點：回答錯誤</button><br>'
+              : '地點批改：' + (g.placeCorrect ? '回答正確，已加 +$3' : '回答錯誤') + '<br>')
+          + '事情答案：<strong>' + esc(g.guessActivity) + '</strong>（正確答案：' + esc(photo.activity) + '）<br>'
+          + (g.activityCorrect === null
+              ? '<button class="btn btn-good" style="margin:4px 0;" onclick="judgeGuess(\'' + g.id + '\',\'activity\',true)">事情：回答正確 (+$5)</button><button class="btn" style="background:#ef4444;margin:4px 0;" onclick="judgeGuess(\'' + g.id + '\',\'activity\',false)">事情：回答錯誤</button>'
+              : '事情批改：' + (g.activityCorrect ? '回答正確，已加 +$5' : '回答錯誤'))
+          + '</div>';
+      }).join('');
+    }
   } else if (myGuess){
     var earned = (myGuess.timeCorrect ? 2 : 0) + (myGuess.placeCorrect === true ? 3 : 0) + (myGuess.activityCorrect === true ? 5 : 0);
     var pending = (myGuess.placeCorrect === null || myGuess.activityCorrect === null);
@@ -951,27 +1016,37 @@ function renderProfile(){
   var myPhotos = state.photos.filter(function(p){ return p.owner === me; });
   var incoming = state.guesses.filter(function(g){ return g.target === me; });
 
+  var pendingCount = incoming.filter(function(g){ return g.placeCorrect === null || g.activityCorrect === null; }).length;
+  var sortedIncoming = incoming.slice().sort(function(a,b){
+    var pa = (a.placeCorrect === null || a.activityCorrect === null) ? 0 : 1;
+    var pb = (b.placeCorrect === null || b.activityCorrect === null) ? 0 : 1;
+    return pa - pb;
+  });
   var judgeHtml = incoming.length === 0
-    ? '<p class="hint" style="margin:0;">目前未有姊妹競猜你嘅相片。</p>'
-    : incoming.map(function(g){
+    ? '<p class="hint" style="margin:0;">目前未有姊妹競猜你嘅相片。有人競猜後，佢哋嘅答案會出現喺度，等你批改。</p>'
+    : (pendingCount > 0
+        ? '<p class="hint" style="margin:0 0 4px;">有 <strong>' + pendingCount + ' 份</strong>答案等緊你批改：㩒「回答正確」先會為對方加分。</p>'
+        : '<p class="hint" style="margin:0 0 4px;">全部答案已經批改晒。</p>')
+      + sortedIncoming.map(function(g){
         var p = state.photos.find(function(x){ return x.id === g.photoId; });
-        return '<div class="judge-item"><div><strong style="letter-spacing:1px;">' + g.guesser + '</strong> 競猜你嘅相（真實答案：' + esc(p ? p.place : '') + '｜' + esc(p ? p.activity : '') + '）</div>'
-          + '<div style="margin-top:4px;">時段：' + esc(g.guessTime) + '（' + (g.timeCorrect ? '估中 +$2' : '估錯') + '）<br>'
-          + '估地點：<strong>' + esc(g.guessPlace) + '</strong> → '
+        return '<div class="judge-item"><div><strong style="letter-spacing:1px;">' + g.guesser + '</strong> 競猜你嘅相' + (p ? '「' + esc(p.clue) + '」' : '') + '</div>'
+          + '<div style="margin-top:4px;">正確答案 — 地點：<strong>' + esc(p ? p.place : '') + '</strong>｜事情：<strong>' + esc(p ? p.activity : '') + '</strong>｜時段：' + esc(p ? p.timeSlot : '') + '</div>'
+          + '<div style="margin-top:4px;">' + g.guesser + ' 嘅答案 — 時段：' + esc(g.guessTime) + '（' + (g.timeCorrect ? '估中 +$2' : '估錯') + '）<br>'
+          + '地點答案：<strong>' + esc(g.guessPlace) + '</strong> → '
           + (g.placeCorrect === null
-              ? '<button style="background:#10b981;" onclick="judgeGuess(\'' + g.id + '\',\'place\',true)">估中 (+$3)</button> <button style="background:#ef4444;" onclick="judgeGuess(\'' + g.id + '\',\'place\',false)">估錯</button>'
-              : (g.placeCorrect ? '已判估中 (+$3)' : '已判估錯')) + '<br>'
-          + '估事情：<strong>' + esc(g.guessActivity) + '</strong> → '
+              ? '<button style="background:#10b981;" onclick="judgeGuess(\'' + g.id + '\',\'place\',true)">回答正確 (+$3)</button> <button style="background:#ef4444;" onclick="judgeGuess(\'' + g.id + '\',\'place\',false)">回答錯誤</button>'
+              : (g.placeCorrect ? '已批改：回答正確 (+$3)' : '已批改：回答錯誤')) + '<br>'
+          + '事情答案：<strong>' + esc(g.guessActivity) + '</strong> → '
           + (g.activityCorrect === null
-              ? '<button style="background:#10b981;" onclick="judgeGuess(\'' + g.id + '\',\'activity\',true)">估中 (+$5)</button> <button style="background:#ef4444;" onclick="judgeGuess(\'' + g.id + '\',\'activity\',false)">估錯</button>'
-              : (g.activityCorrect ? '已判估中 (+$5)' : '已判估錯')) + '</div></div>';
+              ? '<button style="background:#10b981;" onclick="judgeGuess(\'' + g.id + '\',\'activity\',true)">回答正確 (+$5)</button> <button style="background:#ef4444;" onclick="judgeGuess(\'' + g.id + '\',\'activity\',false)">回答錯誤</button>'
+              : (g.activityCorrect ? '已批改：回答正確 (+$5)' : '已批改：回答錯誤')) + '</div></div>';
       }).join('');
 
   return ''
   + '<div class="card">'
   +   '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">'
   +     '<div><div style="font-size:20px;font-weight:900;letter-spacing:3px;">' + me + '</div>'
-  +     '<div style="font-size:12px;color:var(--muted);margin-top:2px;">代表色：<strong>' + cDef.name + '（' + cDef.meaning + '）</strong></div></div>'
+  +     '<div style="font-size:12px;color:var(--muted);margin-top:2px;">今日代表色（每日隨機抽取）：<strong>' + cDef.name + '（' + cDef.meaning + '）</strong></div></div>'
   +     '<div style="text-align:right;"><div style="font-size:11px;color:var(--muted);">個人累積獎金</div><div style="font-size:22px;font-weight:900;color:var(--good);">HK$' + u.money + '</div></div>'
   +   '</div>'
   +   '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;text-align:center;">'
@@ -981,7 +1056,7 @@ function renderProfile(){
   +   '</div>'
   +   '<button class="btn btn-outline" style="margin-top:12px;" onclick="setWallOwner(\'' + me + '\');switchTab(\'wall\')">睇我嘅動態牆</button>'
   + '</div>'
-  + '<div class="card"><div class="card-title"><span>知音批改中心（姊妹估你嘅相）</span></div>' + judgeHtml + '</div>'
+  + '<div class="card"><div class="card-title"><span>知音批改中心（姊妹估你嘅相）</span>' + (pendingCount > 0 ? '<span class="badge-pill" style="background:var(--warn-bg);color:var(--warn-text);">待批改 ' + pendingCount + ' 份</span>' : '') + '</div>' + judgeHtml + '</div>'
   + '<div class="card"><div class="card-title"><span>我的保密相簿（' + myPhotos.length + ' 張）</span></div>'
   +   (myPhotos.length === 0
       ? '<p class="hint" style="margin:0;">你尚未上傳任何色彩相片。</p>'
@@ -1028,12 +1103,20 @@ function renderBoard(){
     }).join('');
   }
 
+  var poolGrandTotal = 1500;
+  var poolRemaining = Math.max(0, poolGrandTotal - pools.total);
+  var poolRemainPct = Math.max(0, Math.min(100, Math.round(poolRemaining / poolGrandTotal * 100)));
   return ''
   + '<div class="card">'
-  +   '<div class="card-title"><span>總獎金池 HK$1,500</span><span style="color:var(--good);">已派 HK$' + pools.total + '</span></div>'
-  +   '<div class="pool-row"><div class="pool-label"><span>相片獎池</span><span>HK$' + pools.photoPaid + ' / $400</span></div><div class="bar-bg"><div class="bar-fill" style="width:' + Math.min(100, pools.photoPaid/400*100) + '%;background:#f97316;"></div></div></div>'
-  +   '<div class="pool-row"><div class="pool-label"><span>競猜獎池</span><span>HK$' + pools.guessPaid + ' / $600</span></div><div class="bar-bg"><div class="bar-fill" style="width:' + Math.min(100, pools.guessPaid/600*100) + '%;background:#3b82f6;"></div></div></div>'
-  +   '<div class="pool-row" style="margin-bottom:0;"><div class="pool-label"><span>步數獎池</span><span>HK$' + pools.stepPaid + ' / $500</span></div><div class="bar-bg"><div class="bar-fill" style="width:' + Math.min(100, pools.stepPaid/500*100) + '%;background:#10b981;"></div></div></div>'
+  +   '<div class="card-title"><span>獎金池（總額 HK$1,500）</span><span style="color:var(--good);">已派 HK$' + pools.total + '</span></div>'
+  +   '<div style="text-align:center;padding:6px 0 10px;"><div style="font-size:12px;color:var(--muted);font-weight:700;">獎金池餘額（仲可以贏取）</div>'
+  +   '<div style="font-size:34px;font-weight:900;color:var(--good);line-height:1.2;">HK$' + poolRemaining + '</div>'
+  +   '<div style="font-size:12px;color:var(--muted);">總池 HK$1,500 ・ 已派 HK$' + pools.total + ' ・ 餘下 ' + poolRemainPct + '%</div></div>'
+  +   '<div class="pool-label"><span>餘下獎金</span><span>HK$' + poolRemaining + ' / $1,500</span></div>'
+  +   '<div class="bar-bg" style="height:14px;margin-bottom:12px;"><div class="bar-fill" style="width:' + poolRemainPct + '%;background:var(--good);"></div></div>'
+  +   '<div class="pool-row"><div class="pool-label"><span>相片獎池（餘下 HK$' + Math.max(0, 400 - pools.photoPaid) + '）</span><span>已派 HK$' + pools.photoPaid + ' / $400</span></div><div class="bar-bg"><div class="bar-fill" style="width:' + Math.min(100, pools.photoPaid/400*100) + '%;background:#f97316;"></div></div></div>'
+  +   '<div class="pool-row"><div class="pool-label"><span>競猜獎池（餘下 HK$' + Math.max(0, 600 - pools.guessPaid) + '）</span><span>已派 HK$' + pools.guessPaid + ' / $600</span></div><div class="bar-bg"><div class="bar-fill" style="width:' + Math.min(100, pools.guessPaid/600*100) + '%;background:#3b82f6;"></div></div></div>'
+  +   '<div class="pool-row" style="margin-bottom:0;"><div class="pool-label"><span>步數獎池（餘下 HK$' + Math.max(0, 500 - pools.stepPaid) + '）</span><span>已派 HK$' + pools.stepPaid + ' / $500</span></div><div class="bar-bg"><div class="bar-fill" style="width:' + Math.min(100, pools.stepPaid/500*100) + '%;background:#10b981;"></div></div></div>'
   + '</div>'
 
   + '<div class="card"><div class="card-title"><span>恩典總資產排行榜</span></div>'
@@ -1049,6 +1132,7 @@ function renderBoard(){
 
 function renderAll(){
   if (!state.currentUser) return;
+  if (ensureDailyColors()) saveState();
   renderHeader();
   document.querySelectorAll('.nav-btn').forEach(function(btn){
     btn.classList.toggle('active', btn.dataset.tab === state.activeTab);
