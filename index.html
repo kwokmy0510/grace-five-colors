@@ -59,6 +59,20 @@
   .login-meta{ font-size:11px; color:var(--muted); margin-top:1px; }
   .login-arrow{ margin-left:auto; font-size:18px; color:var(--muted); }
   .login-note{ font-size:11px; color:var(--muted); line-height:1.6; margin-top:22px; }
+  .login-intro{ text-align:left; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:16px; margin:0 0 22px; box-shadow:0 2px 6px rgba(0,0,0,.03); }
+  .login-intro h2{ font-size:16px; font-weight:900; margin:0 0 8px; letter-spacing:1px; }
+  .login-intro .intro-lead{ font-size:13px; line-height:1.7; color:var(--text); margin:0 0 6px; }
+  .login-intro .intro-pool{ font-size:12px; line-height:1.6; color:var(--muted); margin:0 0 14px; }
+  .login-intro .intro-pool strong{ color:var(--accent); }
+  .intro-task{ display:flex; gap:11px; padding:11px 0; border-top:1px solid var(--soft); }
+  .intro-task:first-of-type{ border-top:none; padding-top:2px; }
+  .intro-task:last-child{ padding-bottom:0; }
+  .intro-num{ width:26px; height:26px; border-radius:50%; flex:none; color:#fff; font-size:13px; font-weight:900; display:inline-flex; align-items:center; justify-content:center; margin-top:1px; }
+  .intro-task-body{ flex:1; min-width:0; }
+  .intro-task-title{ font-size:13.5px; font-weight:800; margin:0 0 3px; line-height:1.45; }
+  .intro-task-title .reward{ color:var(--good); font-weight:900; white-space:nowrap; }
+  .intro-task-desc{ font-size:12px; color:var(--muted); line-height:1.6; margin:0; }
+  .intro-task-desc strong{ color:var(--text); }
 
   /* ---------- 頂欄 ---------- */
   header{
@@ -195,6 +209,32 @@
     </div>
     <h1 class="login-title">恩典五色光</h1>
     <p class="login-sub">五人專屬信仰生活尋寶平台<br>影相尋寶・同心競猜・與主同行</p>
+    <section class="login-intro" aria-label="活動介紹">
+      <h2>活動介紹</h2>
+      <p class="intro-lead">「恩典五色光」係 YUMI、YCY、APPLE、TY、ESTHER 五位姊妹專屬嘅信仰生活尋寶活動。每日每人會抽到一個專屬代表色，跟住完成以下三個任務賺取獎金，一齊喺日常生活入面發現恩典、互相認識。</p>
+      <p class="intro-pool">總獎金池 <strong>HK$1,500</strong>，做得越多、估得越準，賺得越多；獎金池派完即止。</p>
+      <div class="intro-task">
+        <span class="intro-num" style="background:#10b981;">1</span>
+        <div class="intro-task-body">
+          <p class="intro-task-title">任務一：步數打卡 <span class="reward">達標 +HK$10</span></p>
+          <p class="intro-task-desc">每日輸入你嗰日完成嘅行路步數，<strong>達到 8,000 步</strong>即賺 <strong>+HK$10</strong>。每日只可以打卡一次。</p>
+        </div>
+      </div>
+      <div class="intro-task">
+        <span class="intro-num" style="background:#f97316;">2</span>
+        <div class="intro-task-body">
+          <p class="intro-task-title">任務二：上載相片 <span class="reward">上齊 +HK$7</span></p>
+          <p class="intro-task-desc">影低配合你今日代表色嘅生活相片並上載，填好保密嘅<strong>時段、地點同事情</strong>畀姊妹競猜。<strong>每日上齊 6 張</strong>即賺 <strong>+HK$7</strong>。</p>
+        </div>
+      </div>
+      <div class="intro-task">
+        <span class="intro-num" style="background:#3b82f6;">3</span>
+        <div class="intro-task-body">
+          <p class="intro-task-title">任務三：競猜姊妹嘅相片 <span class="reward">單張最高 +HK$10</span></p>
+          <p class="intro-task-desc">去動態牆睇其他姊妹嘅相，估佢哋影相嘅時段、地點同事情：估中<strong>時段 +HK$2</strong>、<strong>地點 +HK$3</strong>、<strong>事情 +HK$5</strong>，一張相最高賺 <strong>HK$10</strong>。地點同事情要由出相嘅姊妹親自批改確認先會計分。</p>
+        </div>
+      </div>
+    </section>
     <p class="login-q">你係邊一位？揀選你嘅名字登入</p>
     <div class="login-list" id="loginList"></div>
   </div>
